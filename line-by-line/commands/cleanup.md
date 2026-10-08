@@ -12,10 +12,7 @@ allowed-tools: Bash
 2. Show what will go: each session's directory (`.line-by-line/<slug>/`) and whether it has a running
    server or a worktree. Say that its progress, reflections and grades go with it. Files already written
    into the project stay. **Ask for confirmation** before deleting anything.
-3. For each confirmed session:
-   - stop its server if it's running: the pid is in `.line-by-line/<slug>/ACTIVE`, or stop the
-     background task you started;
-   - `git worktree remove --force .line-by-line/<slug>/worktree` if a worktree exists (then
-     `git worktree prune`);
-   - `rm -rf .line-by-line/<slug>`.
-4. If `.line-by-line/` is now empty, remove it too. Report what was removed.
+3. For each confirmed session, run `lbl finish .line-by-line/<slug>`. It stops the server, removes
+   the worktree, deletes the session data, and once no sessions are left, removes `.line-by-line/` and
+   the `.git/info/exclude` entry it added.
+4. Report what was removed, and anything `finish` says is left over.

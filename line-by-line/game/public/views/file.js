@@ -7,7 +7,7 @@ import { go } from "../app.js";
 import { burst, floatText, sfx, sound } from "../fx.js";
 import { highlightLines, spans } from "../highlight.js";
 import { Loom } from "../loom.js";
-import { computeStats, emptyStats, fileProgress, isApplied, mode, refresh, saveProgress, stepNumber, stepOf, store } from "../store.js";
+import { computeStats, emptyStats, fileProgress, isApplied, mode, refresh, saveProgress, stepNumber, stepOf, store, walkthrough } from "../store.js";
 import { ApiError, api, esc, md, mdInline, modal, rowsOf, stopsOf, toast } from "../util.js";
 import { stepColor } from "./map.js";
 import { finishFile } from "./step.js";
@@ -40,7 +40,7 @@ export function render({ path, read = false }) {
       <header class="hud glass">
         <button class="btn ghost small" data-back title="Back to the step (Esc)">← Step ${stepNumber(step)}</button>
         <div class="hud-title">
-          <div><h2><code>${esc(file.path)}</code> <span class="badge ${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}">${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}</span></h2>
+          <div><h2><code>${esc(file.path)}</code> ${file.action === "read" ? "" : `<span class="badge ${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}">${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}</span>`}</h2>
           <small id="file-pos"></small></div>
         </div>
         ${hudStats(kind)}
@@ -307,7 +307,7 @@ function updatePos() {
         : v.kind === "apply"
           ? "Nothing to type in this file"
           : v.kind === "review"
-            ? `Changed line ${Math.min(at + 1, total)} of ${total}`
+            ? `${walkthrough() ? "Line" : "Changed line"} ${Math.min(at + 1, total)} of ${total}`
             : `${at} of ${total} lines typed`;
   }
   const lc = document.getElementById("loom-count");
@@ -349,8 +349,10 @@ function hudButtons(kind) {
 }
 
 function legend(kind) {
+  if (kind === "review" && walkthrough()) return `<i class="lg typed"></i> explained · <kbd>↓</kbd> next <kbd>↑</kbd> back`;
   if (kind === "review") return `<i class="lg typed"></i> added <i class="lg removed"></i> removed · <kbd>↓</kbd> next <kbd>↑</kbd> back`;
   if (kind === "type") return `<i class="lg typed"></i> you type <i class="lg removed"></i> removed · <kbd>Tab</kbd> autocomplete · <kbd>⇧</kbd><kbd>Tab</kbd> blind`;
+  if (walkthrough()) return `<i class="lg typed"></i> explained`;
   return `<i class="lg typed"></i> ${mode() === "review" ? "added" : "typed"} <i class="lg removed"></i> removed`;
 }
 
@@ -676,7 +678,7 @@ function move(delta) {
   saveProgress();
   sfx.key();
   renderCurrent(true);
-  if (fp.cursor === last) toast("Last changed line in this file. Press ↓ once more to finish it.", "↓");
+  if (fp.cursor === last) toast(`Last ${walkthrough() ? "" : "changed "}line in this file. Press ↓ once more to finish it.`, "↓");
 }
 
 /* ---------- keyboard ---------- */

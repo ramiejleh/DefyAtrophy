@@ -18,8 +18,8 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill
    (`tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '`), then load the **`grading`**
    skill and clear everything `status` listed as waiting: ungraded reflections, ungraded submissions
    (latest attempt first) and unanswered hints.
-5. Carry on with the original command's steps 7–8 (`/line-by-line:type`, `/line-by-line:learn`), or for
-   a review session, just leave it open.
+5. Carry on with the original command's last steps (`/line-by-line:type`, `/line-by-line:learn`,
+   `/line-by-line:review`), including finishing with `lbl finish "$SESSION"` so nothing is left behind.
 
 The rule from the original command still holds: no solution code goes into the project except
 through the game.

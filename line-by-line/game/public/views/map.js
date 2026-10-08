@@ -1,6 +1,6 @@
 import { go } from "../app.js";
 import { THREAD_COLORS } from "../fx.js";
-import { XP_PER_LEVEL, fileSize, mode, sessionDone, stepPercent, stepStatus, store } from "../store.js";
+import { XP_PER_LEVEL, fileSize, mode, sessionDone, stepPercent, stepStatus, store, walkthrough } from "../store.js";
 import { esc } from "../util.js";
 
 const MODE_COPY = {
@@ -17,7 +17,9 @@ export const spool = (i, status, label = i + 1) =>
 
 export function render() {
   const { session, progress } = store;
-  const [modeName, modeText] = MODE_COPY[mode()];
+  const [modeName, modeText] = walkthrough()
+    ? ["Walkthrough", "Step through how this code works, line by line, in the order it runs."]
+    : MODE_COPY[mode()];
   const statuses = session.steps.map(stepStatus);
   const currentIdx = statuses.findIndex((s) => ["available", "progress", "typed"].includes(s));
   const level = Math.floor(progress.xp / XP_PER_LEVEL) + 1;
@@ -30,7 +32,7 @@ export function render() {
       <div class="map">
         <header class="hero">
           <div>
-            <p class="eyebrow"><span class="mode-badge ${mode()}">${modeName}</span></p>
+            <p class="eyebrow"><span class="mode-badge ${mode()}${walkthrough() ? " walkthrough" : ""}">${modeName}</span></p>
             <h1>Line by <span>Line</span></h1>
             <h2 class="session-title">${esc(session.title)}</h2>
             ${session.task && session.task !== session.title ? `<p class="task">“${esc(session.task)}”</p>` : ""}
@@ -77,7 +79,7 @@ function chipFor(step, status) {
     progress: `<span class="chip accent">In progress · ${pct}%</span>`,
     typed: `<span class="chip blue">Write your reflection</span>`,
     submitted: `<span class="chip blue">Awaiting grade</span>`,
-    done: `<span class="chip green">${mode() === "review" ? "Reviewed" : "Done"}</span>`,
+    done: `<span class="chip green">${mode() === "review" ? (walkthrough() ? "Read" : "Reviewed") : "Done"}</span>`,
     graded:
       grade?.verdict === "pass"
         ? `<span class="chip green">Passed</span>`
@@ -90,7 +92,7 @@ function chipFor(step, status) {
 function nodeHtml(step, i, status, current) {
   const pct = stepPercent(step);
   const size = step.files.reduce((n, f) => n + fileSize(f), 0);
-  const unit = mode() === "learn" ? "parts to write" : mode() === "review" ? "changed lines" : "lines";
+  const unit = mode() === "learn" ? "parts to write" : mode() === "review" ? (walkthrough() ? "lines" : "changed lines") : "lines";
   return `
     <li>
       <button class="node ${current ? "current" : ""}" data-step="${esc(step.id)}" ${status === "locked" ? "disabled" : ""}

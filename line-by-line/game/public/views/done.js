@@ -3,7 +3,7 @@
 import { go } from "../app.js";
 import { burst, confetti, sfx } from "../fx.js";
 import { swatch } from "../loom.js";
-import { computeStats, fileSize, mode, refresh, saveProgress, sessionDone, stepFilesDone, stepNumber, stepStats, store } from "../store.js";
+import { computeStats, fileSize, mode, refresh, saveProgress, sessionDone, stepFilesDone, stepNumber, stepStats, store, walkthrough } from "../store.js";
 import { api, esc, md, mdInline, toast } from "../util.js";
 import { stepColor } from "./map.js";
 
@@ -24,7 +24,7 @@ export function render(params) {
       <div class="done-wrap">
         <div class="trophy">
           <div class="swatch-big">${swatch(bands, { width: 160, height: 110 })}</div>
-          <h1>Step ${i + 1} ${mode() === "review" ? "reviewed" : "complete"}</h1>
+          <h1>Step ${i + 1} ${mode() === "review" ? (walkthrough() ? "read" : "reviewed") : "complete"}</h1>
           <p>${esc(step.title)}</p>
         </div>
         <div class="tiles">${tiles(step)}</div>
@@ -87,7 +87,7 @@ function tiles(step) {
   }
   if (mode() === "review") {
     const lines = step.files.reduce((n, f) => n + fileSize(f), 0);
-    return [[step.files.length, "Files"], [lines, "Changed lines"]].map(tile).join("");
+    return [[step.files.length, "Files"], [lines, walkthrough() ? "Lines" : "Changed lines"]].map(tile).join("");
   }
   const grades = step.files.map((f) => store.state.files[f.path]?.grades ?? []);
   const attempts = step.files.reduce((n, f) => n + (store.state.files[f.path]?.submissions ?? 0), 0);
@@ -238,23 +238,23 @@ function renderFinal() {
       <div class="done-wrap final">
         <div class="trophy">
           <div class="swatch-big">${swatch(bands, { width: 260, height: 200, cols: 22 })}</div>
-          <h1>${mode() === "review" ? "Branch reviewed" : "The weave is finished"}</h1>
+          <h1>${mode() === "review" ? (walkthrough() ? "Walkthrough finished" : "Branch reviewed") : "The weave is finished"}</h1>
           <p>${esc(store.session.title)}</p>
         </div>
         <div class="tiles">
           <div class="tile glass"><b>${steps.length}</b><span>Steps</span></div>
           <div class="tile glass"><b>${steps.reduce((n, s) => n + s.files.length, 0)}</b><span>Files</span></div>
-          <div class="tile glass"><b>${lines}</b><span>${mode() === "learn" ? "Parts written" : mode() === "review" ? "Changed lines" : "Lines typed"}</span></div>
+          <div class="tile glass"><b>${lines}</b><span>${mode() === "learn" ? "Parts written" : mode() === "review" ? (walkthrough() ? "Lines read" : "Changed lines") : "Lines typed"}</span></div>
           ${mode() !== "review" ? `<div class="tile glass"><b>${store.progress.xp}</b><span>Total XP</span></div>` : ""}
         </div>
         ${
           mode() === "review"
-            ? ""
+            ? `<section class="section glass"><p class="dim">Claude is tidying up the session. You can close this tab.</p></section>`
             : `<section class="section glass">
                 <div class="waiting"><div class="spinner"></div><div>${
                   waiting
                     ? `Claude is grading ${waiting} reflection${waiting > 1 ? "s" : ""}, then it will run your project's checks.`
-                    : "Claude is running your project's checks on the real project and will sum up in the chat."
+                    : "Claude is running your project's checks on the real project, then removes the session's scratch files and sums up in the chat. You can close this tab once it does."
                 }</div></div>
               </section>`
         }

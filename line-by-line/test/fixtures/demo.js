@@ -5,7 +5,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { assemble, build } from "../../lib/build.js";
+import { assemble, build, buildFocus } from "../../lib/build.js";
 import { dirSource, gitSource } from "../../lib/sources.js";
 import { makeRepo, makeSolution, sh, writeFiles } from "../helpers.js";
 
@@ -161,6 +161,45 @@ function writeSteps(dir) {
   const steps = structuredClone(STEPS);
   if (draft.mode === "review") for (const s of steps) delete s.reflectionPrompt;
   writeFileSync(join(dir, "steps.json"), JSON.stringify({ title: "Retry with backoff", steps }, null, 2));
+}
+
+/** A walkthrough of existing code (review mode with --focus): no branch, no diff. */
+export function makeWalkthrough() {
+  const files = { ...BEFORE, ...Object.fromEntries(Object.entries(AFTER).filter(([, v]) => v !== null)) };
+  delete files["src/legacy.ts"];
+  const project = makeRepo(files);
+  const out = join(project, ".line-by-line", "walkthrough-retry");
+  buildFocus({
+    project: dirSource(project),
+    projectDir: project,
+    out,
+    task: "how requests are retried",
+    focus: [{ path: "src/http/client.ts", ranges: [[4, 10]] }, { path: "src/retry.ts", ranges: [] }],
+  });
+  writeFileSync(
+    join(out, "steps.json"),
+    JSON.stringify({
+      title: "How requests are retried",
+      steps: [
+        {
+          id: "01-request",
+          title: "A request comes in",
+          tagline: "getJson wraps fetch",
+          goal: "Follow `getJson` from the call to the retry loop.",
+          concepts: [],
+          files: [
+            { path: "src/http/client.ts", order: 1, role: "Fetches JSON from the API", intro: "" },
+            { path: "src/retry.ts", order: 2, role: "Runs async work again with growing waits", intro: "" },
+          ],
+          diagram: { context: [{ path: "src/config.ts", note: "Retry settings" }], edges: [{ from: "src/http/client.ts", to: "src/retry.ts", label: "calls retry()" }] },
+        },
+      ],
+    }),
+  );
+  writeNotes(out);
+  const result = assemble(out);
+  if (!result.ok) throw new Error(result.errors.join("\n"));
+  return { project, sessionDir: out };
 }
 
 export function makeDemo(mode = "type") {

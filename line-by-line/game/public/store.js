@@ -10,6 +10,9 @@ export const emptyStats = () => ({ correct: 0, errors: 0, activeMs: 0, lines: 0,
 
 export const mode = () => store.session.mode;
 
+/** Review mode over existing code (a walkthrough) rather than a branch's changes. */
+export const walkthrough = () => store.session.subject === "code";
+
 export async function load() {
   const [session, state] = await Promise.all([api.get("/api/session"), api.get("/api/state")]);
   store.session = session;

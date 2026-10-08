@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createGameServer } from "../game/server.js";
 import { rows } from "../lib/session.js";
-import { AFTER, makeDemo } from "./fixtures/demo.js";
+import { AFTER, makeDemo, makeWalkthrough } from "./fixtures/demo.js";
 
 const { default: puppeteer } = await import(pathToFileURL(join(process.env.PUPPETEER, "lib", "esm", "puppeteer", "puppeteer-core.js")).href);
 const SHOTS = process.env.SHOTS;
@@ -21,7 +21,7 @@ if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function setup(mode, viewport = { width: 1440, height: 900 }) {
-  const demo = makeDemo(mode);
+  const demo = mode === "walkthrough" ? makeWalkthrough() : makeDemo(mode);
   const events = [];
   const server = createGameServer({ sessionDir: demo.sessionDir, projectDir: demo.project, emit: (l) => events.push(l) });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
@@ -306,8 +306,35 @@ async function e2eLearn() {
   }
 }
 
+async function e2eWalkthrough() {
+  const t = await setup("walkthrough");
+  const { page } = t;
+  try {
+    assert.match(await page.$eval(".mode-badge", (b) => b.textContent), /Walkthrough/);
+    await openStep(page, 1);
+    await t.shot("1-step");
+    assert.equal(await page.$$eval(".card .badge", (b) => b.length), 0, "no new/modified badges for existing code");
+    await openCard(page, "src/http/client.ts");
+    assert.ok((await page.$$(".row.given")).length >= 3, "lines outside the focus are context");
+    assert.equal((await page.$$(".row.removed")).length, 0);
+    assert.match(await page.$eval("#file-pos", (e) => e.textContent), /^Line 1 of/);
+    await t.shot("2-file");
+    for (const path of ["src/http/client.ts", "src/retry.ts"]) {
+      if (path !== "src/http/client.ts") await openCard(page, path);
+      const n = rows(t.fileOf(path)).filter((r) => r.kind === "typed" && r.text).length;
+      for (let i = 0; i < n; i++) await page.keyboard.press("Tab");
+      await sleep(1200);
+    }
+    await t.waitEvent("LBL complete");
+    await page.waitForSelector(".done-wrap");
+    for (const [path, content] of Object.entries(AFTER)) if (content) assert.equal(t.disk(path), content, `never writes (${path})`);
+  } finally {
+    await t.close();
+  }
+}
+
 const which = process.argv[2];
-for (const [name, fn] of Object.entries({ type: e2eType, review: e2eReview, learn: e2eLearn })) {
+for (const [name, fn] of Object.entries({ type: e2eType, review: e2eReview, learn: e2eLearn, walkthrough: e2eWalkthrough })) {
   if (which && which !== name) continue;
   const start = Date.now();
   await fn();

@@ -148,7 +148,11 @@ export function createGameServer({ sessionDir, projectDir, token = randomBytes(1
   };
 
   function isComplete() {
-    if (session.mode === "review") return false;
+    if (session.mode === "review") {
+      // Review progress lives in the browser; it's complete once every file has been stepped through.
+      const files = readJson(at("progress.json"), {}).files ?? {};
+      return allFiles(session).every(({ file }) => files[file.path]?.done);
+    }
     const done = applied();
     if (!allFiles(session).every(({ file }) => file.path in done)) return false;
     if (!session.steps.every((s) => (s.autoApplied ?? []).every((a) => a.path in done))) return false;
@@ -198,6 +202,7 @@ export function createGameServer({ sessionDir, projectDir, token = randomBytes(1
 
     "PUT /api/progress": (body) => {
       writeFileSync(at("progress.json"), JSON.stringify(body, null, 2));
+      if (session.mode === "review") maybeComplete();
       return { ok: true };
     },
 
@@ -407,13 +412,14 @@ export function openBrowser(url) {
 }
 
 /** Starts the game and prints the one machine-readable line Claude waits for: `LBL ready <url>`. */
-export function serve({ sessionDir, projectDir, port = 0, open = true }) {
+export function serve({ sessionDir, projectDir, port = 0, open = true, beforeReady = () => {} }) {
   const server = createGameServer({ sessionDir, projectDir });
   return new Promise((done, fail) => {
     server.once("error", fail);
     server.listen(port, "127.0.0.1", () => {
       // The token rides in the fragment, so it never reaches server logs or Referer headers.
       const url = `http://localhost:${server.address().port}/#t=${server.token}`;
+      beforeReady();
       console.log(`LBL ready ${url}`);
       if (open) openBrowser(url);
       done({ server, url });

@@ -1,7 +1,7 @@
-import { appendFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { appendFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
-import { assemble, build } from "./build.js";
+import { assemble, build, buildFocus, parseFocus } from "./build.js";
 import { SESSION_DIR, defaultBranch, dirSource, git, gitSource, isGitRepo } from "./sources.js";
 import { allFiles, findFile, loadSession, readJson, rebuild, rows } from "./session.js";
 import { validate } from "./validate.js";
@@ -9,12 +9,14 @@ import { validate } from "./validate.js";
 const USAGE = `line-by-line <command>
 
   build     --mode type|learn|review [--project .] [--solution <dir>] [--base <ref>] [--task "..."] [--out <dir>]
+            --mode review --focus <path[:10-40,60-80]> …   walk through existing code instead of a branch
   assemble  <session-dir>          merge steps.json + notes.txt / holes.txt into session.json, then validate
   validate  <session-dir>
   serve     --session <dir> [--project .] [--port 0] [--no-open]
   check     <session-dir> <path>   learn mode: put the latest submission into check/ for testing
   status    <session-dir>          progress, plus anything waiting for Claude
   list      [--project .]          sessions in this project
+  finish    <session-dir>          stop the server, remove the worktree and every trace of the session
 `;
 
 const enc = (p) => encodeURIComponent(p);
@@ -39,6 +41,83 @@ export function ignoreSessionDir(projectDir) {
   if (current.split(/\r?\n/).some((l) => l.trim() === `${SESSION_DIR}/` || l.trim() === SESSION_DIR)) return;
   mkdirSync(dirname(exclude), { recursive: true });
   appendFileSync(exclude, `${current && !current.endsWith("\n") ? "\n" : ""}${SESSION_DIR}/\n`);
+  // Marker so `finish` only removes the line if we added it.
+  mkdirSync(join(projectDir, SESSION_DIR), { recursive: true });
+  writeFileSync(join(projectDir, SESSION_DIR, EXCLUDE_MARKER), exclude);
+}
+
+const EXCLUDE_MARKER = ".added-git-exclude";
+const SESSION_LINE = (l) => l.trim() === `${SESSION_DIR}/` || l.trim() === SESSION_DIR;
+
+const pidAlive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Removes every trace of a session: stops its server, removes the scratch worktree, deletes the session
+ * data, and once no sessions are left, deletes .line-by-line/ and the git exclude line we added.
+ * What remains is exactly what the game wrote into the project, as if the code had been written directly.
+ */
+export function finish(sessionDir) {
+  const recorded = readJson(join(sessionDir, "session.json"), null) ?? readJson(join(sessionDir, "draft.json"), {});
+  const projectDir = recorded.projectDir ?? resolve(sessionDir, "..", "..");
+  const report = [];
+  const pids = new Set(["server.pid", "ACTIVE"].map((f) => readJson(join(sessionDir, f), null)?.pid).filter(Boolean));
+  for (const pid of pids) {
+    if (pid !== process.pid && pidAlive(pid)) {
+      process.kill(pid, "SIGTERM");
+      report.push(`stopped the game server (pid ${pid})`);
+    }
+  }
+  const worktree = join(sessionDir, "worktree");
+  if (existsSync(worktree)) {
+    if (isGitRepo(projectDir)) {
+      try {
+        git(projectDir, ["worktree", "remove", "--force", worktree], { stdio: "ignore" });
+      } catch {}
+    }
+    rmSync(worktree, { recursive: true, force: true });
+    report.push("removed the scratch worktree");
+  }
+  if (isGitRepo(projectDir)) git(projectDir, ["worktree", "prune"], { stdio: "ignore" });
+  const shown = `${relative(realpathSync(projectDir), realpathSync(dirname(sessionDir)))}/${basename(sessionDir)}`;
+  rmSync(sessionDir, { recursive: true, force: true });
+  report.push(`deleted ${shown}`);
+
+  const root = join(projectDir, SESSION_DIR);
+  const others = existsSync(root) ? readdirSync(root).filter((n) => n !== EXCLUDE_MARKER) : [];
+  if (existsSync(root) && !others.length) {
+    const marker = join(root, EXCLUDE_MARKER);
+    if (existsSync(marker)) {
+      const exclude = readFileSync(marker, "utf8").trim();
+      if (existsSync(exclude)) {
+        const lines = readFileSync(exclude, "utf8").split("\n");
+        const at = lines.findIndex(SESSION_LINE);
+        if (at !== -1) {
+          lines.splice(at, 1);
+          writeFileSync(exclude, lines.join("\n"));
+          report.push("removed the .git/info/exclude entry");
+        }
+      }
+    }
+    rmSync(root, { recursive: true, force: true });
+    report.push(`deleted ${SESSION_DIR}/`);
+  } else if (others.length) {
+    report.push(`kept ${SESSION_DIR}/: other sessions are still in it (${others.join(", ")})`);
+  }
+
+  const leftovers = [];
+  if (isGitRepo(projectDir)) {
+    const trees = git(projectDir, ["worktree", "list", "--porcelain"]).toString();
+    if (trees.includes(`${sep}${SESSION_DIR}${sep}${basename(sessionDir)}${sep}`)) leftovers.push("this session's git worktree is still registered");
+  }
+  if (!others.length && existsSync(root)) leftovers.push(`${SESSION_DIR}/ still exists`);
+  return { report, leftovers };
 }
 
 const absolute = (p, base = process.cwd()) => (isAbsolute(p) ? p : resolve(base, p));
@@ -53,10 +132,27 @@ function cmdBuild(argv) {
       base: { type: "string" },
       task: { type: "string", default: "" },
       out: { type: "string" },
+      focus: { type: "string", multiple: true },
     },
   });
   const projectDir = absolute(values.project);
   const mode = values.mode;
+  if (values.focus?.length) {
+    // A walkthrough of existing code: no diff, the focused lines are what the user steps through.
+    if (mode !== "review") throw new Error("--focus only works with --mode review");
+    const outDir = absolute(values.out ?? join(SESSION_DIR, slugify(values.task || "walkthrough")), projectDir);
+    ignoreSessionDir(projectDir);
+    const result = buildFocus({ project: dirSource(projectDir), projectDir, out: outDir, task: values.task, focus: values.focus.map(parseFocus) });
+    return out(
+      `Built a walkthrough draft in ${outDir}`,
+      `  ${result.files} files, ${result.lines} lines to step through`,
+      "",
+      "Next:",
+      "  1. Fill in steps.json (steps in the order the code runs, file order and roles, diagram context and edges)",
+      "  2. Write notes.txt with a note for every line in notes-todo.txt",
+      `  3. line-by-line assemble ${outDir}`,
+    );
+  }
   let from;
   let to;
   let base = null;
@@ -118,14 +214,22 @@ export async function serveFromArgs(argv) {
   const session = loadSession(sessionDir);
   const projectDir = absolute(values.project ?? session.projectDir);
   const { serve } = await import("../game/server.js");
-  await serve({ sessionDir, projectDir, port: Number(values.port), open: !values["no-open"] });
-  if (session.mode !== "review" && !existsSync(join(sessionDir, "complete"))) {
-    // Read by the write-guard hook. It only counts while this process is alive.
-    writeFileSync(join(sessionDir, "ACTIVE"), JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }));
-    const clear = () => rmSync(join(sessionDir, "ACTIVE"), { force: true });
-    process.on("exit", clear);
-    for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => process.exit(0));
-  }
+  // Written before "LBL ready" is printed, so whoever waits for that line can rely on them.
+  const announce = () => {
+    // Lets `finish` stop this server whichever mode it's in.
+    writeFileSync(join(sessionDir, "server.pid"), JSON.stringify({ pid: process.pid }));
+    if (session.mode !== "review" && !existsSync(join(sessionDir, "complete"))) {
+      // Read by the write-guard hook. It only counts while this process is alive.
+      writeFileSync(join(sessionDir, "ACTIVE"), JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }));
+    }
+  };
+  const clear = () => {
+    rmSync(join(sessionDir, "ACTIVE"), { force: true });
+    rmSync(join(sessionDir, "server.pid"), { force: true });
+  };
+  process.on("exit", clear);
+  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => process.exit(0));
+  await serve({ sessionDir, projectDir, port: Number(values.port), open: !values["no-open"], beforeReady: announce });
 }
 
 /** Learn mode: rebuild the latest submission inside check/, a copy of the reference solution. */
@@ -251,6 +355,20 @@ function cmdList(argv) {
   }
 }
 
+function cmdFinish([dir]) {
+  if (!dir) throw new Error("Usage: line-by-line finish <session-dir>");
+  const sessionDir = absolute(dir);
+  if (!existsSync(join(sessionDir, "draft.json")) && !existsSync(join(sessionDir, "session.json"))) {
+    throw new Error(`${dir} doesn't look like a line-by-line session`);
+  }
+  const { report, leftovers } = finish(sessionDir);
+  out(...report.map((r) => `  ${r}`));
+  if (leftovers.length) {
+    out("", "Left over:", ...leftovers.map((l) => `  ${l}`));
+    process.exitCode = 1;
+  } else out("CLEAN: nothing of the session is left in the project.");
+}
+
 export async function main(argv) {
   const [command, ...rest] = argv;
   try {
@@ -261,6 +379,7 @@ export async function main(argv) {
     if (command === "check") return cmdCheck(rest);
     if (command === "status") return cmdStatus(rest);
     if (command === "list") return cmdList(rest);
+    if (command === "finish") return cmdFinish(rest);
     out(USAGE);
     if (command && command !== "help" && command !== "--help") process.exitCode = 1;
   } catch (error) {

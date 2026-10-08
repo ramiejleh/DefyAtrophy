@@ -302,6 +302,10 @@ kbd,
   background: var(--accent-2);
 }
 
+.mode-badge.walkthrough {
+  background: var(--saffron);
+}
+
 /* ---------- spool ---------- */
 
 .spool {

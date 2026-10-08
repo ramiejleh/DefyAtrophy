@@ -93,11 +93,17 @@ tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '
 
 If anything is pending when you start (for example after a restart), `lbl status "$SESSION"` lists it.
 
-## 8. Finish
+## 8. Finish: leave no trace
 
-- Run the project's checks in the **real** project and report the results.
-- `git worktree remove --force "$SESSION/worktree"` (or delete the copy).
-- Stop the game server.
-- Keep `$SESSION/` (progress, reflections, grades) unless the user asks to delete it
-  (`/line-by-line:cleanup`).
-- Summarise what changed in a few lines, plus how the reflections went.
+When it's over, the project must look exactly as if you had implemented the task directly: the
+feature's files and nothing else. No session data, no worktree, no git exclude entry.
+
+1. Run the project's checks in the **real** project and note the results.
+2. Read the grades and reflections you'll want for the summary. They're about to be deleted.
+3. Run `lbl finish "$SESSION"`. It stops the game server, removes the scratch worktree, deletes the
+   session data, and once no other sessions are left, deletes `.line-by-line/` and the
+   `.git/info/exclude` entry it added. It prints `CLEAN` when nothing is left. If it lists leftovers,
+   fix them.
+4. Check `git status --porcelain` and `git worktree list`: only the task's own changes should show,
+   and no extra worktree.
+5. Summarise what changed in a few lines, plus the check results and how the reflections went.

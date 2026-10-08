@@ -2,7 +2,7 @@
 
 import { go } from "../app.js";
 import { burst, confetti, sfx } from "../fx.js";
-import { fileSize, fileStatus, mode, nextSuggested, saveProgress, stepFilesDone, stepNumber, stepPercent, stepStatus, store } from "../store.js";
+import { fileSize, fileStatus, mode, nextSuggested, saveProgress, stepFilesDone, stepNumber, stepPercent, stepStatus, store, walkthrough } from "../store.js";
 import { buildTree } from "../tree.js";
 import { api, esc, fileName, md, mdInline, toast } from "../util.js";
 import { spool } from "./map.js";
@@ -20,7 +20,7 @@ const STATUS = {
   partial: ["~", "Almost there"],
   retry: ["↺", "Needs another go"],
 };
-const ACTION = { create: ["new", "New"], modify: ["modified", "Modified"], delete: ["deleted", "Deleted"] };
+const ACTION = { create: ["new", "New"], modify: ["modified", "Modified"], delete: ["deleted", "Deleted"], read: ["existing", ""] };
 
 const projectName = () => store.session.projectDir.split(/[\\/]/).filter(Boolean).pop() ?? "project";
 
@@ -54,7 +54,7 @@ export function render({ stepId }) {
               <h2>Where these files live</h2>
               <div class="legend">
                 <span><i class="order-dot">1</i> suggested order</span>
-                <span><i class="badge new">new</i></span><span><i class="badge modified">modified</i></span><span><i class="badge deleted">deleted</i></span>
+                ${walkthrough() ? "" : `<span><i class="badge new">new</i></span><span><i class="badge modified">modified</i></span><span><i class="badge deleted">deleted</i></span>`}
                 <span><i class="ctx-dot"></i> context</span>
               </div>
             </div>
@@ -93,7 +93,7 @@ export function render({ stepId }) {
               stepFilesDone(step) && mode() !== "review"
                 ? `<button class="btn" data-summary>${mode() === "type" && !store.state.reflections[step.id] ? "Write your reflection →" : "Step summary →"}</button>`
                 : stepFilesDone(step)
-                  ? `<button class="btn" data-summary>Step reviewed. Continue →</button>`
+                  ? `<button class="btn" data-summary>Step ${walkthrough() ? "read" : "reviewed"}. Continue →</button>`
                   : ""
             }
           </aside>
@@ -167,9 +167,9 @@ function cardHtml(entry) {
   const pct = st === "done" ? 100 : mode() === "learn" ? 0 : Math.round(((fp?.cursor ?? 0) / Math.max(1, size)) * 100);
   return `
     <button class="card ${st} ${actionCls}" data-node="${esc(entry.path)}" data-open="${esc(entry.path)}"
-      aria-label="${entry.order}. ${esc(entry.path)}, ${actionText.toLowerCase()}, ${STATUS[st][1].toLowerCase()}">
+      aria-label="${entry.order}. ${esc(entry.path)}, ${actionText ? `${actionText.toLowerCase()}, ` : ""}${STATUS[st][1].toLowerCase()}">
       <span class="order-dot">${entry.order}</span>
-      <span class="card-top"><span class="card-name">${esc(entry.name)}</span><span class="badge ${actionCls}">${actionText}</span></span>
+      <span class="card-top"><span class="card-name">${esc(entry.name)}</span>${actionText ? `<span class="badge ${actionCls}">${actionText}</span>` : ""}</span>
       <span class="card-role">${esc(entry.role ?? "")}</span>
       <span class="card-meta"><span>${STATUS[st][0] ? `${STATUS[st][0]} ` : ""}${STATUS[st][1]}</span><span>${size} ${unit}</span></span>
       <span class="card-bar"><i style="width:${pct}%"></i></span>

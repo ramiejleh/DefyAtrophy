@@ -82,6 +82,8 @@ tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '
 
 ## 8. Finish
 
-As in type mode: run the project's checks in the real project (the user's code is what's there now),
-report honestly, remove the worktree and `$SESSION/check`, stop the server, and summarise. Include how
-many attempts each file took and anything the user should revisit.
+As in type mode (step 8, "leave no trace"): run the project's checks in the real project (the
+user's code is what's there now), read the grades you need for the summary, then run
+`lbl finish "$SESSION"` until it prints `CLEAN`, and confirm `git status` shows only the task's own
+changes. Summarise honestly, including how many attempts each file took and anything the user should
+revisit.

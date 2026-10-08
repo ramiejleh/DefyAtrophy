@@ -19,11 +19,11 @@ rather than another summarizer.
 
 ## What it is not
 
-- **Not a review tool.** `review-gate` and `interactive-pr-review` are adversarial
-  and non-linear — you hunt for problems and produce output. This is linear and
-  receptive: you produce nothing but understanding. Opposite layouts, opposite
-  navigation. It shares low-level primitives with them (highlighter, colour
-  tokens) and nothing else.
+- **Not a review tool.** `interactive-pr-review` is adversarial and non-linear —
+  you hunt for problems and produce output. This is linear and receptive: you
+  produce nothing but understanding. Opposite layouts, opposite navigation. It
+  shares low-level primitives with it (highlighter, colour tokens) and nothing
+  else.
 - **Not a summary.** If a reader can get the gist without reading code, it has
   failed.
 - **Not tied to a diff.** It explains code as it *is*, whoever wrote it and
@@ -243,9 +243,9 @@ walkthrough/
   tree. Note the correction to the original design: the page **cannot** warn on
   open, because a `file://` document can read neither the filesystem nor the
   network. Freshness is answered by the scripts instead.
-- **Later, not built** — programmatic entry from a recorded change set (waits on
-  review-gate's ordered change log, which does not exist yet); completion code
-  the page emits on reaching the last step.
+- **Later, not built** — programmatic entry from a recorded change set (needs an
+  ordered log of the changes Claude made, which nothing records yet); completion
+  code the page emits on reaching the last step.
 
 ---
 

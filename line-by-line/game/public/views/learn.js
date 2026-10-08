@@ -35,7 +35,7 @@ export function render({ path }) {
       <header class="hud glass">
         <button class="btn ghost small" data-back>← Step ${stepNumber(step)}</button>
         <div class="hud-title">
-          <div><h2><code>${esc(file.path)}</code> <span class="badge ${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}">${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}</span></h2>
+          <div><h2><code>${esc(file.path)}</code> ${file.action === "read" ? "" : `<span class="badge ${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}">${file.action === "create" ? "new" : file.action === "delete" ? "deleted" : "modified"}</span>`}</h2>
           <small id="attempts"></small></div>
         </div>
         ${

@@ -24,7 +24,9 @@ The template has every changed file in one step. Split it.
 - **1–8 steps**, each something a person can hold in their head: one idea, roughly ≤150 typed lines
   (type mode), ≤8 holes (learn mode). A small task can be one step.
 - **Dependencies first.** A step only uses what earlier steps built (types and config before logic,
-  logic before callers, callers before tests). In review mode, the order *is* the explanation.
+  logic before callers, callers before tests). In review mode, the order *is* the explanation. For
+  a walkthrough of existing code, follow execution order instead: where a request or call enters,
+  then each hop it takes.
 - **Each file is in exactly one step.** `assemble` fails if a changed file is missing, so if a big
   file must be split, split the work across steps by file instead.
 - `autoApplied` lists untyped changes for that step: lockfiles, binaries, generated files and huge
@@ -102,8 +104,11 @@ How to write them:
 - **Closing braces and trivial lines** get a short note ("Closes the retry loop."). They still need one.
 - Use markdown backticks for code. `\n` makes a line break. Keep notes about this code, not generic
   tutorials.
-- **Review mode** explains the change: what this line does in the new design, and for a modified line,
-  what changed. Don't critique, suggest changes, or summarise the PR.
+- **Branch review** explains the change: what this line does in the new design, and for a modified
+  line, what changed. Don't critique, suggest changes, or summarise the PR.
+- **Walkthrough** (review mode built with `--focus`): explain each line's part in the flow being
+  traced: what it receives, what it does, and where the result goes next. When a line hands off to
+  another file in the walkthrough, say where ("the token goes to `verifyToken` in step 3").
 
 Write notes for a few hundred lines in batches, file by file, appending to `notes.txt`. A short script
 that maps keys to notes is fine. The notes themselves must be real, specific and correct.

@@ -9,9 +9,12 @@ project yourself, in a small browser game. It has three modes:
 | `/line-by-line:type <task>` | type the solution, one line at a time, with a note explaining every line | solves and verifies it, writes the notes, grades a short reflection after each step |
 | `/line-by-line:learn <task>` | write the real logic yourself, inside Claude's architecture (files, types, signatures) | designs it, writes a reference, runs your project's checks against **your** code and grades each file |
 | `/line-by-line:review [base]` | step through your current branch's changes, line by line, in a logical order | orders the changes and explains every changed line. No typing, nothing written, nothing sent anywhere |
+| `/line-by-line:review <topic>` | walk through existing code, e.g. `the auth implementation`, line by line | traces the flow, picks the files and line ranges in execution order, explains every line |
 
 Files reach your project only through the game. In type and learn mode, a hook asks you before Claude
-writes into the project while a session is running.
+writes into the project while a session is running. When a session ends, Claude removes every trace of
+it: the scratch worktree, the session data and the git exclude entry. Your project is left exactly as if
+the code had been written directly.
 
 ![A step: its files in their real folders, numbered in a suggested order, with import arrows](docs/step-diagram.jpg)
 
@@ -58,14 +61,17 @@ worktree), or Claude copies the project instead. Review mode needs git.
 | `/line-by-line:type <task>` | Solve in a worktree, then type it in the game |
 | `/line-by-line:learn <task>` | Solve and design in a worktree, then write it yourself, graded per file |
 | `/line-by-line:review [base]` | Step through the branch's commits since `base` (default: the default branch) |
+| `/line-by-line:review <topic>` | Walk through existing code on a topic, in the order it runs |
 | `/line-by-line:resume [slug]` | Restart the game and grading after a break or a new Claude session |
 | `/line-by-line:list` | Sessions in this project, with progress and anything waiting for grading |
-| `/line-by-line:cleanup [slug]` | Stop the server and remove the worktree and session data (asks first) |
+| `/line-by-line:cleanup [slug]` | Stop the server and remove a session that never finished (asks first) |
 
 ## What lives where
 
-Session data lives in your project, under `.line-by-line/<slug>/`. It's added to `.git/info/exclude`,
-so it never shows up in `git status` and your `.gitignore` isn't touched.
+While a session runs, its data lives in your project under `.line-by-line/<slug>/`. It's added to
+`.git/info/exclude`, so it never shows up in `git status` and your `.gitignore` isn't touched. When the
+session finishes, `line-by-line finish` deletes all of it, including the exclude entry it added and the
+folder itself once no other sessions are left.
 
 ```
 .line-by-line/<slug>/
@@ -74,7 +80,7 @@ so it never shows up in `git status` and your `.gitignore` isn't touched.
   progress.json           your progress, XP and drafts
   reflections/ grades/    your reflections, Claude's grades
   submissions/ hints/     learn mode
-  worktree/               Claude's scratch solution (removed at the end)
+  worktree/               Claude's scratch solution
   server.log              game events Claude listens to
 ```
 
@@ -88,12 +94,14 @@ project.
 
 ```
 line-by-line build     --mode type|learn|review …   diff the solution (or the branch) into a draft
+                       --mode review --focus a.ts:10-40 …   or walk through existing code
 line-by-line assemble  <session>                    merge steps.json + notes.txt / holes.txt, validate
 line-by-line validate  <session>                    every file rebuilds byte for byte (tabs, CRLF, final newline)
 line-by-line serve     --session <dir>              start the game, print "LBL ready <url>"
 line-by-line check     <session> <path>             learn mode: put the latest submission in check/ for testing
 line-by-line status    <session>                    progress and anything waiting for Claude
 line-by-line list
+line-by-line finish    <session>                    stop the server, remove the worktree and every trace of the session
 ```
 
 Highlighting and the learn-mode editor use a vendored [CodeMirror 5](https://codemirror.net/5/) (MIT),

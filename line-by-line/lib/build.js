@@ -170,6 +170,83 @@ export function build({ mode, from, to, projectDir, out, task = "", base = null 
   return { files: files.length, autoApplied: autoApplied.length, lines: files.reduce((n, f) => n + rows(f).filter((r) => r.kind === "typed" && r.text).length, 0) };
 }
 
+/**
+ * Review mode over existing code (a walkthrough, not a diff): each focus entry is a file, optionally narrowed
+ * to line ranges. Lines inside the ranges are the ones the user steps through; the rest is context.
+ * @param {{ path: string, ranges: [number, number][] }[]} focus
+ */
+export function buildFocus({ project, projectDir, out, task = "", focus }) {
+  const files = [];
+  const seen = new Set();
+  for (const { path, ranges } of focus) {
+    if (seen.has(path)) throw new Error(`${path} is listed twice: put all its ranges in one --focus (a.ts:1-20,40-60)`);
+    seen.add(path);
+    const buf = project.read(path);
+    if (!buf) throw new Error(`${path} doesn't exist in the project`);
+    const split = splitContent(buf.toString("utf8"));
+    const reason = untypeableReason(path, buf, split);
+    if (reason) throw new Error(`${path} can't be walked through (${reason})`);
+    const n = split.lines.length;
+    const wanted = ranges.length ? ranges : [[1, n]];
+    for (const [a, b] of wanted) if (a < 1 || b > n || b < a) throw new Error(`${path}: range ${a}-${b} is outside its ${n} lines`);
+    const inRange = (i) => wanted.some(([a, b]) => i + 1 >= a && i + 1 <= b);
+    const segments = [];
+    split.lines.forEach((line, i) => {
+      const kind = inRange(i) ? "typed" : "given";
+      const last = segments[segments.length - 1];
+      if (last?.kind === kind) last.lines.push({ ...line });
+      else segments.push({ kind, lines: [{ ...line }] });
+    });
+    const language = languageOf(path);
+    files.push({
+      path,
+      action: "read",
+      language,
+      tabSize: tabSizeOf(split.lines, language),
+      eol: split.eol,
+      finalNewline: split.finalNewline,
+      baseHash: sha256(buf),
+      targetHash: sha256(buf),
+      segments,
+    });
+  }
+  mkdirSync(out, { recursive: true });
+  const draft = {
+    version: 1,
+    mode: "review",
+    subject: "code",
+    task,
+    projectDir,
+    createdAt: new Date().toISOString(),
+    source: { kind: "dir", path: projectDir },
+    base: null,
+    autoApplied: [],
+    files,
+  };
+  writeFileSync(join(out, "draft.json"), JSON.stringify(draft, null, 2));
+  if (!existsSync(join(out, "steps.json"))) {
+    const template = {
+      title: "",
+      steps: [{ id: "01-first-step", title: "", tagline: "", goal: "", concepts: [], files: files.map((f, i) => ({ path: f.path, order: i + 1, role: "", intro: "" })), autoApplied: [], diagram: { context: [], edges: [] } }],
+    };
+    writeFileSync(join(out, "steps.json"), JSON.stringify(template, null, 2));
+  }
+  const todo = [];
+  for (const f of files) {
+    todo.push(`# ${f.path}`);
+    for (const r of rows(f)) if (r.kind === "typed" && r.text) todo.push(`${f.path}:${r.newNo}\t${r.indent}${r.text}`);
+  }
+  writeFileSync(join(out, "notes-todo.txt"), todo.join("\n") + "\n");
+  return { files: files.length, autoApplied: 0, lines: files.reduce((n, f) => n + rows(f).filter((r) => r.kind === "typed" && r.text).length, 0) };
+}
+
+/** "src/a.ts:10-40,55-60" → { path, ranges: [[10, 40], [55, 60]] } */
+export function parseFocus(spec) {
+  const m = spec.match(/^(.*?):((?:\d+-\d+)(?:,\d+-\d+)*)$/);
+  if (!m) return { path: spec, ranges: [] };
+  return { path: m[1], ranges: m[2].split(",").map((r) => r.split("-").map(Number)) };
+}
+
 /** Parses `path:N<TAB>note` lines. Negative N addresses a removed line by its old line number. */
 export function parseNotes(text) {
   const notes = new Map();

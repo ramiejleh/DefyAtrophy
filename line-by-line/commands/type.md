@@ -87,7 +87,9 @@ tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '
 - `LBL reflection <stepId>`: load the **`grading`** skill and grade the reflection right away.
 - `LBL file <path>` / `LBL step-done <stepId>` / `LBL skip <path>`: no action needed. A `skip` means
   the user kept their own version of a file that had changed on disk. Mention it in the final summary.
-- `LBL complete`: stop the Monitor and finish.
+- `LBL complete`: everything is written, but the last reflection or submission usually arrives
+  together with it. Grade whatever `lbl status "$SESSION"` still lists, wait ~10 seconds so the game
+  can show the grade, then stop the Monitor and finish.
 
 If anything is pending when you start (for example after a restart), `lbl status "$SESSION"` lists it.
 

@@ -29,7 +29,8 @@ async function setup(mode, viewport = { width: 1440, height: 900 }) {
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  // A 409 is the conflict flow working as designed; the browser logs it anyway.
+  page.on("console", (m) => m.type() === "error" && !m.text().includes("status of 409") && errors.push(m.text()));
   await page.goto(`http://localhost:${server.address().port}/#t=${server.token}`);
   await page.waitForSelector(".node");
   const session = JSON.parse(readFileSync(join(demo.sessionDir, "session.json"), "utf8"));
@@ -155,6 +156,9 @@ async function e2eType() {
     await page.waitForSelector(".node");
 
     // Step 2: a modify with removed lines, a deletion and a tab-indented Go file
+    // ...but first someone edits one of its files on disk: a banner warns, and writing it asks first
+    writeFileSync(join(t.project, "tools/main.go"), "package main\n// edited by hand\n");
+    await page.waitForSelector("#banner.show", { timeout: 8000 });
     await openStep(page, 2);
     await openCard(page, "src/http/client.ts");
     assert.ok((await page.$$(".row.removed")).length > 0, "removed lines are shown struck through");
@@ -176,12 +180,21 @@ async function e2eType() {
     await page.waitForSelector(".diagram .card");
     await openCard(page, "tools/main.go");
     await typeFile(t, "tools/main.go");
-    assert.equal(t.disk("tools/main.go"), AFTER["tools/main.go"], "tabs survive");
+    await page.waitForSelector('.modal [data-act="overwrite"]', { timeout: 8000 });
+    await t.shot("11-conflict");
+    await page.click('.modal [data-act="overwrite"]');
+    await sleep(1500);
+    assert.equal(t.disk("tools/main.go"), AFTER["tools/main.go"], "tabs survive, and the overwrite went through");
     await page.waitForSelector("#reflect");
     await page.type("#reflect", "Wrapping the whole request means a bad status code is retried too, not just a network error from fetch. The old constant was dead code.");
     await page.click("#submit");
     await t.waitEvent("LBL complete");
-    await page.waitForSelector('[data-act="final"]', { timeout: 8000 }).catch(() => {});
+    for (const id of ["02-use-it"]) writeFileSync(join(t.sessionDir, "grades", "steps", `${id}.json`), JSON.stringify({ verdict: "partial", score: 70, feedback: "Close." }));
+    await page.waitForSelector('[data-act="final"]', { timeout: 8000 });
+    await page.click('[data-act="final"]');
+    await page.waitForSelector(".done-wrap.final");
+    await sleep(600);
+    await t.shot("10-final");
     await noBrokenText(page);
   } finally {
     await t.close();

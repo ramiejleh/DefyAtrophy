@@ -13,6 +13,8 @@ project yourself, in a small browser game. It has three modes:
 Files reach your project only through the game. In type and learn mode, a hook asks you before Claude
 writes into the project while a session is running.
 
+![A step: its files in their real folders, numbered in a suggested order, with import arrows](docs/step-diagram.jpg)
+
 ## How it plays
 
 1. **Steps.** The task is split into a few steps that build on each other, drawn as spools on a thread.
@@ -33,6 +35,10 @@ writes into the project while a session is running.
    - **Review mode** steps through every added and removed line with Tab, Enter or the arrow keys.
 4. **After each step** (type mode), you explain what you built in your own words, and Claude grades it
    within seconds.
+
+| Type | Learn | Review |
+|---|---|---|
+| ![Type mode](docs/type-mode.jpg) | ![Learn mode](docs/learn-mode.jpg) | ![Review mode](docs/review-mode.jpg) |
 
 ## Install
 

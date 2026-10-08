@@ -74,7 +74,9 @@ tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '
   user is watching a spinner.
 - `LBL hint <stepId> <path> <holeId>`: write a hint (the `grading` skill says how).
 - `LBL file …` / `LBL step-done …` / `LBL skip …`: no action needed.
-- `LBL complete`: stop the Monitor and finish.
+- `LBL complete`: everything is written, but the last reflection or submission usually arrives
+  together with it. Grade whatever `lbl status "$SESSION"` still lists, wait ~10 seconds so the game
+  can show the grade, then stop the Monitor and finish.
 
 `lbl status "$SESSION"` lists anything still waiting.
 

@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Rami Ejleh that keep a human in the loop as the machine speeds up \u2014 installable from the ramiejleh/DefyAtrophy GitHub repo.",
-    "version": "1.2.0"
+    "version": "1.3.0"
   },
   "plugins": [
     {
@@ -49,6 +49,27 @@
         "walkthrough",
         "explain-code",
         "syntax-highlighting"
+      ]
+    },
+    {
+      "name": "line-by-line",
+      "source": "./line-by-line",
+      "description": "Write the code yourself, line by line. Claude solves a task in a scratch git worktree and verifies it; you then type it into your project with a note on every line (type), write the logic yourself inside Claude's architecture and get each file graded against your project's checks (learn), or step through your local branch's changes in a logical order (review). Each step opens on a diagram of where its files live, numbered in a suggested order.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Rami Ejleh",
+        "url": "https://github.com/ramiejleh"
+      },
+      "license": "MIT",
+      "keywords": [
+        "learning",
+        "typing",
+        "code-comprehension",
+        "code-review",
+        "human-in-the-loop",
+        "education",
+        "practice",
+        "git-worktree"
       ]
     }
   ]

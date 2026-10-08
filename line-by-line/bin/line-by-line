@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+// Added to Claude's Bash PATH while the plugin is enabled.
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+
+const root = dirname(dirname(realpathSync(fileURLToPath(import.meta.url))));
+const { main } = await import(pathToFileURL(join(root, "lib", "cli.js")).href);
+await main(process.argv.slice(2));

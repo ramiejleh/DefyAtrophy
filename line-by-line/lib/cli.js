@@ -1,6 +1,7 @@
 import { appendFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
+import { execFileSync } from "node:child_process";
 import { assemble, build, buildFocus, parseFocus } from "./build.js";
 import { SESSION_DIR, defaultBranch, dirSource, git, gitSource, isGitRepo } from "./sources.js";
 import { allFiles, findFile, loadSession, readJson, rebuild, rows } from "./session.js";
@@ -41,13 +42,27 @@ export function ignoreSessionDir(projectDir) {
   if (current.split(/\r?\n/).some((l) => l.trim() === `${SESSION_DIR}/` || l.trim() === SESSION_DIR)) return;
   mkdirSync(dirname(exclude), { recursive: true });
   appendFileSync(exclude, `${current && !current.endsWith("\n") ? "\n" : ""}${SESSION_DIR}/\n`);
-  // Marker so `finish` only removes the line if we added it.
+  // Marker so `finish` only removes the line if we added it. Only its presence matters: the exclude path
+  // is always recomputed from git, never read from a file a repository could ship.
   mkdirSync(join(projectDir, SESSION_DIR), { recursive: true });
-  writeFileSync(join(projectDir, SESSION_DIR, EXCLUDE_MARKER), exclude);
+  writeFileSync(join(projectDir, SESSION_DIR, EXCLUDE_MARKER), "");
 }
+
+const excludeFile = (projectDir) => resolve(projectDir, git(projectDir, ["rev-parse", "--git-path", "info/exclude"]).toString().trim());
 
 const EXCLUDE_MARKER = ".added-git-exclude";
 const SESSION_LINE = (l) => l.trim() === `${SESSION_DIR}/` || l.trim() === SESSION_DIR;
+
+/** True only if `pid` is a live `line-by-line serve` process for this session, so a pid file can't aim us elsewhere. */
+function isOurServer(pid, sessionDir) {
+  if (!Number.isInteger(pid) || pid <= 1 || pid === process.pid) return false;
+  try {
+    const cmd = execFileSync("ps", ["-p", String(pid), "-o", "command="], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    return /line-by-line(\.js)?\s+serve\b/.test(cmd) && cmd.includes(basename(sessionDir));
+  } catch {
+    return false;
+  }
+}
 
 const pidAlive = (pid) => {
   try {
@@ -69,7 +84,7 @@ export function finish(sessionDir) {
   const report = [];
   const pids = new Set(["server.pid", "ACTIVE"].map((f) => readJson(join(sessionDir, f), null)?.pid).filter(Boolean));
   for (const pid of pids) {
-    if (pid !== process.pid && pidAlive(pid)) {
+    if (pidAlive(pid) && isOurServer(pid, sessionDir)) {
       process.kill(pid, "SIGTERM");
       report.push(`stopped the game server (pid ${pid})`);
     }
@@ -93,8 +108,8 @@ export function finish(sessionDir) {
   const others = existsSync(root) ? readdirSync(root).filter((n) => n !== EXCLUDE_MARKER) : [];
   if (existsSync(root) && !others.length) {
     const marker = join(root, EXCLUDE_MARKER);
-    if (existsSync(marker)) {
-      const exclude = readFileSync(marker, "utf8").trim();
+    if (existsSync(marker) && isGitRepo(projectDir)) {
+      const exclude = excludeFile(projectDir);
       if (existsSync(exclude)) {
         const lines = readFileSync(exclude, "utf8").split("\n");
         const at = lines.findIndex(SESSION_LINE);

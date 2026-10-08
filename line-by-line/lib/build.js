@@ -182,7 +182,7 @@ export function buildFocus({ project, projectDir, out, task = "", focus }) {
     if (seen.has(path)) throw new Error(`${path} is listed twice: put all its ranges in one --focus (a.ts:1-20,40-60)`);
     seen.add(path);
     const buf = project.read(path);
-    if (!buf) throw new Error(`${path} doesn't exist in the project`);
+    if (!buf) throw new Error(`${path} doesn't exist in the project (or is outside it)`);
     const split = splitContent(buf.toString("utf8"));
     const reason = untypeableReason(path, buf, split);
     if (reason) throw new Error(`${path} can't be walked through (${reason})`);

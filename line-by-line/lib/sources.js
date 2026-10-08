@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 
 export const SESSION_DIR = ".line-by-line";
 const WALK_IGNORE = new Set([".git", "node_modules", SESSION_DIR, ".DS_Store"]);
@@ -41,8 +41,12 @@ export function dirSource(dir) {
       return out;
     },
     read(path) {
-      const full = join(dir, path);
-      return existsSync(full) && statSync(full).isFile() ? readFileSync(full) : null;
+      const full = resolve(dir, path);
+      if (!full.startsWith(resolve(dir) + sep)) return null;
+      if (!existsSync(full) || !statSync(full).isFile()) return null;
+      // follow symlinks, but only to files that are still inside the root
+      const real = realpathSync(full);
+      return real.startsWith(realpathSync(dir) + sep) ? readFileSync(full) : null;
     },
   };
 }

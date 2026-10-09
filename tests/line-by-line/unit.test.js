@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { diffLines } from "../lib/diff.js";
-import { applyHoles, parseHoles, parseNotes, segmentsFor } from "../lib/build.js";
-import { rebuild, rows, splitContent } from "../lib/session.js";
+import { diffLines } from "../../line-by-line/lib/diff.js";
+import { applyHoles, parseHoles, parseNotes, segmentsFor } from "../../line-by-line/lib/build.js";
+import { rebuild, rows, splitContent } from "../../line-by-line/lib/session.js";
 
 const fileFrom = (oldC, newC) => {
   const split = splitContent(newC ?? "");

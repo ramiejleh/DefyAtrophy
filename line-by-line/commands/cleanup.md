@@ -1,7 +1,6 @@
 ---
 description: Remove line-by-line sessions — stops the game server, removes the scratch worktree, and deletes the session data. Lists and confirms before deleting anything.
 argument-hint: "[session slug, default: all sessions]"
-allowed-tools: Bash
 ---
 
 # Clean up line-by-line sessions

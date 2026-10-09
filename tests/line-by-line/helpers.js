@@ -2,8 +2,8 @@ import { execFileSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { assemble, build } from "../lib/build.js";
-import { dirSource, gitSource } from "../lib/sources.js";
+import { assemble, build } from "../../line-by-line/lib/build.js";
+import { dirSource, gitSource } from "../../line-by-line/lib/sources.js";
 
 export const tmp = (prefix = "lbl-") => mkdtempSync(join(tmpdir(), prefix));
 
@@ -95,7 +95,7 @@ export function makeReviewSession({ files, changes }) {
 
 /** Starts a game server on a free port and returns a tiny client for it. */
 export async function startServer(sessionDir, project) {
-  const { createGameServer } = await import("../game/server.js");
+  const { createGameServer } = await import("../../line-by-line/game/server.js");
   const events = [];
   const server = createGameServer({ sessionDir, projectDir: project, emit: (l) => events.push(l) });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));

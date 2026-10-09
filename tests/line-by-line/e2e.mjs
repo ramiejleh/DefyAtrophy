@@ -11,8 +11,8 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createGameServer } from "../game/server.js";
-import { rows } from "../lib/session.js";
+import { createGameServer } from "../../line-by-line/game/server.js";
+import { rows } from "../../line-by-line/lib/session.js";
 import { AFTER, makeDemo, makeWalkthrough } from "./fixtures/demo.js";
 
 const { default: puppeteer } = await import(pathToFileURL(join(process.env.PUPPETEER, "lib", "esm", "puppeteer", "puppeteer-core.js")).href);

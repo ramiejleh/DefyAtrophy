@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { tmp } from "./helpers.js";
 
-const GUARD = join(import.meta.dirname, "..", "hooks", "guard.js");
+const GUARD = join(import.meta.dirname, "..", "..", "line-by-line", "hooks", "guard.js");
 const run = (root, file_path) => {
   const r = spawnSync(process.execPath, [GUARD], {
     input: JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "Edit", cwd: root, tool_input: { file_path } }),

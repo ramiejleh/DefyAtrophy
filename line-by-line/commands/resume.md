@@ -1,7 +1,6 @@
 ---
 description: Reopen a line-by-line session after a break or a new Claude session. Restarts the game server and the grading loop, and grades anything submitted while nobody was watching.
 argument-hint: "[session slug]"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill
 ---
 
 # Resume a line-by-line session

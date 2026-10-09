@@ -16,7 +16,14 @@ writes into the project while a session is running. When a session ends, Claude 
 it: the scratch worktree, the session data and the git exclude entry. Your project is left exactly as if
 the code had been written directly.
 
+https://github.com/user-attachments/assets/f480ded5-1e19-4099-b590-e13b4be3e60d
+
+<details>
+<summary>Can't play the video here? An animated preview</summary>
+
 ![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](docs/demo.gif)
+
+</details>
 
 ![A step: its files in their real folders, numbered in a suggested order, with import arrows](docs/step-diagram.jpg)
 

@@ -22,7 +22,7 @@ runs. If you see that prompt, use the worktree path instead.
 ## 1–3. Scope, scratch copy, solve and verify
 
 Exactly as in type mode (`/line-by-line:type` steps 1–3): restate the task, pick a slug and
-`SESSION=.line-by-line/<slug>`, then `git worktree add --detach "$SESSION/worktree" HEAD`. Solve the
+the session folder `.line-by-line/<slug>` (written `<session>` below), then `git worktree add --detach "<session>/worktree" HEAD`. Solve the
 task in the worktree and verify it with the project's own checks. The reference must pass them, because
 grading compares the user's code against the same checks.
 
@@ -31,7 +31,7 @@ Design for learning: small functions with clear signatures, and names that expla
 ## 4. Build the draft
 
 ```
-lbl build --mode learn --solution "$SESSION/worktree" --task "<the task, in the user's words>" --out "$SESSION"
+lbl build --mode learn --solution "<session>/worktree" --task "<the task, in the user's words>" --out "<session>"
 ```
 
 This writes `draft.json`, a `steps.json` template and `holes-todo.txt` (every changed region, by line range).
@@ -42,7 +42,7 @@ Load the **`authoring-sessions`** skill and follow its learn-mode section. It co
 diagram, choosing holes (`holes.txt`) and writing specs, and the private rubric. Then:
 
 ```
-lbl assemble "$SESSION"
+lbl assemble "<session>"
 ```
 
 Fix every error and assemble again until it prints `VALID`.
@@ -52,7 +52,7 @@ Fix every error and assemble again until it prints `VALID`.
 Start the server in the background exactly as in type mode:
 
 ```
-lbl serve --session "$SESSION" > "$SESSION/server.log" 2>&1
+lbl serve --session "<session>" > "<session>/server.log" 2>&1
 ```
 
 Give the user the `LBL ready <url>` URL from the log. Explain the game in a few lines:
@@ -66,7 +66,7 @@ Give the user the `LBL ready <url>` URL from the log. Explain the game in a few 
 Start a **Monitor** (longest timeout, re-arm on expiry):
 
 ```
-tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '
+tail -n 0 -F "<session>/server.log" | grep --line-buffered '^LBL '
 ```
 
 - `LBL submit <stepId> <path> <n>`: load the **`grading`** skill and grade attempt `n` right away. The
@@ -74,15 +74,15 @@ tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '
 - `LBL hint <stepId> <path> <holeId>`: write a hint (the `grading` skill says how).
 - `LBL file …` / `LBL step-done …` / `LBL skip …`: no action needed.
 - `LBL complete`: everything is written, but the last reflection or submission usually arrives
-  together with it. Grade whatever `lbl status "$SESSION"` still lists, wait ~10 seconds so the game
+  together with it. Grade whatever `lbl status "<session>"` still lists, wait ~10 seconds so the game
   can show the grade, then stop the Monitor and finish.
 
-`lbl status "$SESSION"` lists anything still waiting.
+`lbl status "<session>"` lists anything still waiting.
 
 ## 8. Finish
 
 As in type mode (step 8, "leave no trace"): run the project's checks in the real project (the
 user's code is what's there now), read the grades you need for the summary, then run
-`lbl finish "$SESSION"` until it prints `CLEAN`, and confirm `git status` shows only the task's own
+`lbl finish "<session>"` until it prints `CLEAN`, and confirm `git status` shows only the task's own
 changes. Summarise honestly, including how many attempts each file took and anything the user should
 revisit.

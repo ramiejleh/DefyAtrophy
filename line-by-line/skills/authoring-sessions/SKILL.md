@@ -5,8 +5,8 @@ description: How to turn a line-by-line draft into a session. Covers splitting t
 
 # Authoring a line-by-line session
 
-`line-by-line build` has written a draft into the session directory (`$SESSION`). You fill in three
-files by hand, run `line-by-line assemble "$SESSION"`, and fix errors until it prints `VALID`:
+`line-by-line build` has written a draft into the session folder (`.line-by-line/<slug>`, written `<session>` below). You fill in three
+files by hand, run `line-by-line assemble "<session>"`, and fix errors until it prints `VALID`:
 
 | File | Modes | What it holds |
 |---|---|---|
@@ -141,7 +141,7 @@ and try again, up to `tries` times. Rethrow the last error once out of tries.
 
 ## 4. Rubric (`private/rubric.json`, type and learn)
 
-Create `$SESSION/private/` if it doesn't exist. The server never serves anything in it.
+Create `<session>/private/` if it doesn't exist. The server never serves anything in it.
 
 ```jsonc
 {
@@ -168,6 +168,6 @@ Create `$SESSION/private/` if it doesn't exist. The server never serves anything
 - Type/review: every line in `notes-todo.txt` has a note. Learn: every hole has a spec.
 - Type/learn: the rubric is written.
 
-Then `line-by-line assemble "$SESSION"`. Errors name the file and line. Fix them and run it again.
+Then `line-by-line assemble "<session>"`. Errors name the file and line. Fix them and run it again.
 `VALID` means every file rebuilds byte for byte into the solution, so what the user produces is exactly
 what you verified.

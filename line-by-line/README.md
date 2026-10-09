@@ -118,7 +118,7 @@ What it writes: session data under `.line-by-line/<slug>/` in your project (git-
 `.git/info/exclude`), the files you finish in the game, and nothing else. `line-by-line finish` removes the session
 data, the worktree and the exclude entry when a session ends.
 
-See the [privacy policy](PRIVACY.md) for the full details.
+See the [privacy policy](PRIVACY.md) for the full details, and the [terms of use](TERMS.md).
 
 ## Under the hood
 

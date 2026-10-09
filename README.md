@@ -51,7 +51,14 @@ Swap `line-by-line` for `interactive-pr-review` or `walkthrough` to install the 
 
 > Write the code yourself, line by line.
 
+https://github.com/user-attachments/assets/f480ded5-1e19-4099-b590-e13b4be3e60d
+
+<details>
+<summary>Can't play the video here? An animated preview</summary>
+
 ![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](line-by-line/docs/demo.gif)
+
+</details>
 
 Ask Claude for a feature as usual. Claude solves it out of sight, in a scratch git worktree, and checks
 it with your project's own tests. Then, instead of Claude writing the files, **you** build them into

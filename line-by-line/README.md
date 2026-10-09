@@ -134,8 +134,9 @@ line-by-line list
 line-by-line finish    <session>                    stop the server, remove the worktree and every trace of the session
 ```
 
-Highlighting and the learn-mode editor use a vendored, unmodified copy of [CodeMirror 5.65.18](https://codemirror.net/5/)
-(MIT), and the fonts are Space Grotesk and JetBrains Mono (SIL Open Font License), so the game works offline.
+Highlighting and the learn-mode editor use a vendored copy of [CodeMirror 5.65.18](https://codemirror.net/5/) under the MIT
+license: its code is unchanged, the licence comments point at the bundled `LICENSE` file, and the SQL mode is left
+out. The fonts are Space Grotesk and JetBrains Mono (SIL Open Font License). Everything works offline.
 
 ## Development
 

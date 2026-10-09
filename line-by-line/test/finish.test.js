@@ -123,3 +123,41 @@ test("walkthrough: review mode over existing code, with line ranges", async () =
   assert.match(run(project, "finish", session).out, /CLEAN/);
   assert.equal(existsSync(join(project, ".line-by-line")), false);
 });
+
+test("security: finish trusts no paths or pids from files a repository could ship", async () => {
+  const { tmp } = await import("./helpers.js");
+  const project = makeRepo(FILES);
+  const { session, server } = await playSession(project, "evil");
+
+  // a marker that names some other file must not make finish edit it
+  const victim = join(tmp("lbl-victim-"), "victim.txt");
+  writeFileSync(victim, "keep\n.line-by-line/\nkeep\n");
+  writeFileSync(join(project, ".line-by-line", ".added-git-exclude"), victim);
+
+  // a pid file that names an unrelated process must not get it killed
+  const bystander = spawn(process.execPath, ["-e", "setTimeout(() => {}, 30000)"]);
+  spawned.push(bystander);
+  writeFileSync(join(session, "server.pid"), JSON.stringify({ pid: bystander.pid }));
+
+  const done = run(project, "finish", session);
+  assert.equal(done.code, 0, done.out);
+  assert.equal(readFileSync(victim, "utf8"), "keep\n.line-by-line/\nkeep\n", "the named file is untouched");
+  assert.ok(alive(bystander.pid), "the unrelated process is still running");
+  assert.match(done.out, /stopped the game server \(pid \d+\)/, "the real server, found via ACTIVE, is still stopped");
+  await new Promise((r) => (server.exitCode !== null ? r() : server.on("exit", r)));
+  assert.doesNotMatch(readFileSync(join(project, ".git", "info", "exclude"), "utf8"), /line-by-line/, "the real exclude entry is removed");
+});
+
+test("security: --focus can't read outside the project", async () => {
+  const { symlinkSync } = await import("node:fs");
+  const { tmp } = await import("./helpers.js");
+  const project = makeRepo(FILES);
+  const outside = join(tmp("lbl-outside-"), "secret.txt");
+  writeFileSync(outside, "secret\n");
+  symlinkSync(outside, join(project, "link.txt"));
+  for (const focus of ["../../../../../../etc/hosts", "link.txt"]) {
+    const r = run(project, "build", "--mode", "review", "--focus", focus, "--out", ".line-by-line/x");
+    assert.equal(r.code, 1, focus);
+    assert.match(r.out, /doesn't exist in the project \(or is outside it\)/);
+  }
+});

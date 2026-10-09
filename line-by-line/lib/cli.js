@@ -57,7 +57,12 @@ const SESSION_LINE = (l) => l.trim() === `${SESSION_DIR}/` || l.trim() === SESSI
 function isOurServer(pid, sessionDir) {
   if (!Number.isInteger(pid) || pid <= 1 || pid === process.pid) return false;
   try {
-    const cmd = execFileSync("ps", ["-p", String(pid), "-o", "command="], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const opts = { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] };
+    // pid is a checked integer, so it's safe to put in the PowerShell filter
+    const cmd =
+      process.platform === "win32"
+        ? execFileSync("powershell", ["-NoProfile", "-Command", `(Get-CimInstance Win32_Process -Filter "ProcessId=${pid}").CommandLine`], opts)
+        : execFileSync("ps", ["-p", String(pid), "-o", "command="], opts);
     return /line-by-line(\.js)?\s+serve\b/.test(cmd) && cmd.includes(basename(sessionDir));
   } catch {
     return false;

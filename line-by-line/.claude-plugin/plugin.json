@@ -2,7 +2,7 @@
   "name": "line-by-line",
   "displayName": "Line by Line",
   "version": "1.0.0",
-  "description": "Write the code yourself, line by line. Claude solves a task in a scratch worktree, then you type it (with a note on every line), write it from Claude's architecture and get graded file by file, or step through a local branch's changes in logical order. Files reach your project only through the game.",
+  "description": "Write the code yourself, line by line. Claude solves a task in a scratch git worktree and verifies it; you then type it into your project with a note on every line (type), write the logic yourself inside Claude's architecture and get each file graded against your project's checks (learn), or tab through your branch's changes or any existing code, like 'the auth implementation', in a logical order (review). Each step opens on a diagram of where its files live, and when a session ends nothing is left behind but the code.",
   "author": {
     "name": "Rami Ejleh",
     "url": "https://github.com/ramiejleh"
@@ -10,5 +10,14 @@
   "homepage": "https://github.com/ramiejleh/DefyAtrophy/tree/main/line-by-line",
   "repository": "https://github.com/ramiejleh/DefyAtrophy",
   "license": "MIT",
-  "keywords": ["learning", "typing", "code-comprehension", "code-review", "human-in-the-loop", "education", "practice", "git-worktree"]
+  "keywords": [
+    "learning",
+    "typing",
+    "code-comprehension",
+    "code-review",
+    "human-in-the-loop",
+    "education",
+    "practice",
+    "git-worktree"
+  ]
 }

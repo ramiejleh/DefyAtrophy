@@ -54,7 +54,7 @@
     {
       "name": "line-by-line",
       "source": "./line-by-line",
-      "description": "Write the code yourself, line by line. Claude solves a task in a scratch git worktree and verifies it; you then type it into your project with a note on every line (type), write the logic yourself inside Claude's architecture and get each file graded against your project's checks (learn), or step through your local branch's changes in a logical order (review). Each step opens on a diagram of where its files live, numbered in a suggested order.",
+      "description": "Write the code yourself, line by line. Claude solves a task in a scratch git worktree and verifies it; you then type it into your project with a note on every line (type), write the logic yourself inside Claude's architecture and get each file graded against your project's checks (learn), or tab through your branch's changes or any existing code, like 'the auth implementation', in a logical order (review). Each step opens on a diagram of where its files live, and when a session ends nothing is left behind but the code.",
       "version": "1.0.0",
       "author": {
         "name": "Rami Ejleh",

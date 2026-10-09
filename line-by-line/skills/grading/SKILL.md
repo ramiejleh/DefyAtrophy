@@ -6,7 +6,7 @@ description: How to grade line-by-line work while the user plays. Covers reflect
 # Grading line-by-line work
 
 The user is watching the game for your answer, so grade promptly. Everything you write lands in
-`$SESSION` (the session directory) as JSON, and the game picks it up within a few seconds. Keep it to
+`<session>` (the session directory) as JSON, and the game picks it up within a few seconds. Keep it to
 that file. You don't need to say anything in the chat beyond a one-line note.
 
 Your feedback should leave the user understanding more than before. Be honest, be specific, quote
@@ -15,15 +15,15 @@ that leads to it.
 
 ## Reflections (type mode): `LBL reflection <stepId>`
 
-1. Read `$SESSION/reflections/<stepId>.md`, the step in `$SESSION/session.json` (its goal, concepts,
-   files and reflection prompt), and `$SESSION/private/rubric.json` → `steps.<stepId>`.
+1. Read `<session>/reflections/<stepId>.md`, the step in `<session>/session.json` (its goal, concepts,
+   files and reflection prompt), and `<session>/private/rubric.json` → `steps.<stepId>`.
 2. Decide:
    - **pass**: covers the key points in their own words, with no real misconception.
    - **partial**: mostly right, but misses a key point or is vague where it matters.
    - **retry**: a misconception, or mostly restating the prompt or the code.
 
    Judge understanding, not prose. Short and right beats long and vague.
-3. Write `$SESSION/grades/steps/<stepId>.json` (create the folders):
+3. Write `<session>/grades/steps/<stepId>.json` (create the folders):
 
 ```json
 { "verdict": "pass", "score": 88, "feedback": "You nailed **why** the token is cached …\n\n- One thing to check: …" }
@@ -35,10 +35,10 @@ last attempt?"). If they rewrite a reflection, a new `LBL reflection` arrives. G
 
 ## File submissions (learn mode): `LBL submit <stepId> <path> <n>`
 
-1. Run `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line" check "$SESSION" "<path>"`. It rebuilds attempt `n`
-   into `$SESSION/check/` (a copy of the reference solution) and prints the file's location and the
+1. Run `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line" check "<session>" "<path>"`. It rebuilds attempt `n`
+   into `<session>/check/` (a copy of the reference solution) and prints the file's location and the
    grade file to write.
-2. **Run the project's checks from `$SESSION/check/`**: the relevant tests, the type-check, the lint
+2. **Run the project's checks from `<session>/check/`**: the relevant tests, the type-check, the lint
    (`rubric.holes.<id>.checks` if you wrote one). Later files may not exist yet in the user's version,
    so focus on checks that cover this file.
 3. Read their code (the file in `check/`) against each hole's spec and the rubric's `mustDo` and
@@ -48,7 +48,7 @@ last attempt?"). If they rewrite a reflection, a new `LBL reflection` arrives. G
    - **partial**: works for the main path, but misses an edge case, has a small bug or a real smell.
      The user may accept it and move on.
    - **retry**: doesn't work, doesn't meet the spec, or fails the checks.
-5. **Add** an entry to the JSON array in `$SESSION/grades/files/<encoded path>.json` (`check` prints the
+5. **Add** an entry to the JSON array in `<session>/grades/files/<encoded path>.json` (`check` prints the
    exact name; create the file as `[]` first if needed). Never rewrite earlier attempts:
 
 ```json
@@ -63,8 +63,8 @@ output in the feedback, without the fix. On a pass, the game writes the file int
 
 ## Hints (learn mode): `LBL hint <stepId> <path> <holeId>`
 
-Read the hole's spec, the user's current draft (`$SESSION/progress.json` → `files.<path>.draft.<holeId>`,
-or their latest submission), and the reference. Add an entry to `$SESSION/hints/<encoded path>.json`
+Read the hole's spec, the user's current draft (`<session>/progress.json` → `files.<path>.draft.<holeId>`,
+or their latest submission), and the reference. Add an entry to `<session>/hints/<encoded path>.json`
 (an array; the encoding is the same as for grades, e.g. `src%2Fretry.ts.json`):
 
 ```json

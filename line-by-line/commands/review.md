@@ -27,8 +27,8 @@ verdict, a critique or suggested changes.
 ## A. Branch review
 
 1. If `git status --porcelain` shows uncommitted changes, say that they aren't included. Slug:
-   `review-<branch>` in kebab-case. `SESSION=.line-by-line/<slug>`.
-2. `lbl build --mode review --base "<ref>" --task "review <branch>" --out "$SESSION"` (leave out
+   `review-<branch>` in kebab-case. The session folder is `.line-by-line/<slug>`, written `<session>` below.
+2. `lbl build --mode review --base "<ref>" --task "review <branch>" --out "<session>"` (leave out
    `--base` for the default branch). `notes-todo.txt` lists every added line (`path:N`) and removed
    line (`path:-N`).
 3. Read the changed files properly, then load the **`authoring-sessions`** skill and follow its
@@ -45,10 +45,10 @@ verdict, a critique or suggested changes.
    under ~600 lines in total. If it's more, say so and suggest splitting the topic.
 3. If the topic is ambiguous ("auth" could mean login, sessions or permissions), propose the outline
    (step titles only) and let the user correct it before writing notes.
-4. Slug: `walkthrough-<topic>` in kebab-case, `SESSION=.line-by-line/<slug>`. Build with one `--focus`
+4. Slug: `walkthrough-<topic>` in kebab-case, The session folder is `.line-by-line/<slug>`, written `<session>` below. Build with one `--focus`
    per file, in the order the code runs. Ranges are optional:
    ```
-   lbl build --mode review --task "<what the user asked for>" --out "$SESSION" \
+   lbl build --mode review --task "<what the user asked for>" --out "<session>" \
      --focus src/routes/login.ts --focus src/auth/session.ts:12-80,95-120 --focus src/auth/token.ts
    ```
 5. Load the **`authoring-sessions`** skill and follow its review-mode section. The steps follow
@@ -57,16 +57,16 @@ verdict, a critique or suggested changes.
 
 ## Then, for both kinds
 
-1. `lbl assemble "$SESSION"`. Fix every error until it prints `VALID`.
+1. `lbl assemble "<session>"`. Fix every error until it prints `VALID`.
 2. Start the server **in the background**:
    ```
-   lbl serve --session "$SESSION" > "$SESSION/server.log" 2>&1
+   lbl serve --session "<session>" > "<session>/server.log" 2>&1
    ```
    Give the user the `LBL ready <url>` URL from the log and tell them in two lines:
    - each step shows where its files live, with a suggested order;
    - in a file, Tab, Enter or ↓ moves to the next line, and Shift+Tab or ↑ goes back.
-3. Start a **Monitor** (`tail -n 0 -F "$SESSION/server.log" | grep --line-buffered '^LBL '`, longest
+3. Start a **Monitor** (`tail -n 0 -F "<session>/server.log" | grep --line-buffered '^LBL '`, longest
    timeout, re-arm on expiry). On `LBL complete` (every file stepped through), or when the user says
    they're done, or on `/line-by-line:cleanup`: wait ~10 seconds so the final screen shows, then run
-   `lbl finish "$SESSION"`. It stops the server and removes every trace of the session. Nothing is left
+   `lbl finish "<session>"`. It stops the server and removes every trace of the session. Nothing is left
    in the project.

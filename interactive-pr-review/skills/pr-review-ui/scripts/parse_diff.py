@@ -185,6 +185,20 @@ def parse(diff_text):
     return files
 
 
+def normalize_pr(pr):
+    """Accept `gh pr view --json` output as-is: the UI wants author/base/head as plain strings,
+    while gh gives `author` as an object and the branches as baseRefName/headRefName."""
+    pr = dict(pr)
+    author = pr.get("author")
+    if isinstance(author, dict):
+        pr["author"] = author.get("login") or author.get("name") or ""
+    if "base" not in pr and "baseRefName" in pr:
+        pr["base"] = pr["baseRefName"]
+    if "head" not in pr and "headRefName" in pr:
+        pr["head"] = pr["headRefName"]
+    return pr
+
+
 def main(argv):
     if len(argv) < 3:
         sys.stderr.write(__doc__)
@@ -193,7 +207,7 @@ def main(argv):
     pr = {}
     if "--pr-json" in argv:
         pr_path = argv[argv.index("--pr-json") + 1]
-        pr = json.load(open(pr_path))
+        pr = normalize_pr(json.load(open(pr_path)))
 
     diff_text = open(diff_path, "r", encoding="utf-8", errors="replace").read()
     files = parse(diff_text)

@@ -15,6 +15,15 @@
   --code-bg: #fcfcfb;
   --dim: 0.42;
   --measure: 68ch;
+  /* syntax colours: highlight.js tags the tokens, these give them colour */
+  --syn-kw: #a626a4;
+  --syn-str: #2e7d32;
+  --syn-num: #b45309;
+  --syn-fn: #1d4ed8;
+  --syn-type: #9a6700;
+  --syn-com: #8b857d;
+  --syn-attr: #0e7490;
+  --syn-meta: #6d28d9;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +40,14 @@
     --accent-soft: #292440;
     --code-bg: #1a191f;
     --dim: 0.38;
+    --syn-kw: #d19bf0;
+    --syn-str: #a8d68f;
+    --syn-num: #f0a868;
+    --syn-fn: #8ab4ff;
+    --syn-type: #e5c07b;
+    --syn-com: #7e7871;
+    --syn-attr: #7fd3e6;
+    --syn-meta: #b39aff;
   }
 }
 
@@ -39,12 +56,23 @@
   --ink-faint: #8b857d; --rule: #e5e1da; --focus-bg: #fff8e1;
   --focus-edge: #e0a800; --accent: #7c4dff; --accent-soft: #f0ebff;
   --code-bg: #fcfcfb; --dim: 0.42;
+  --syn-kw: #a626a4; --syn-str: #2e7d32; --syn-num: #b45309; --syn-fn: #1d4ed8; --syn-type: #9a6700; --syn-com: #8b857d; --syn-attr: #0e7490; --syn-meta: #6d28d9;
 }
 :root[data-theme="dark"] {
   --bg: #16151a; --surface: #1d1c22; --ink: #ece9e4; --ink-soft: #b3ada4;
   --ink-faint: #7e7871; --rule: #2f2d35; --focus-bg: #2c2717;
   --focus-edge: #b8860b; --accent: #b39aff; --accent-soft: #292440;
   --code-bg: #1a191f; --dim: 0.38;
+  --syn-kw: #d19bf0; --syn-str: #a8d68f; --syn-num: #f0a868; --syn-fn: #8ab4ff; --syn-type: #e5c07b; --syn-com: #7e7871; --syn-attr: #7fd3e6; --syn-meta: #b39aff;
 }
 
 * { box-sizing: border-box; }
+
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-built_in { color: var(--syn-kw); }
+.hljs-string, .hljs-regexp, .hljs-template-variable, .hljs-addition { color: var(--syn-str); }
+.hljs-number, .hljs-symbol, .hljs-bullet { color: var(--syn-num); }
+.hljs-title, .hljs-title.function_, .hljs-section { color: var(--syn-fn); }
+.hljs-type, .hljs-title.class_, .hljs-class .hljs-title { color: var(--syn-type); }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable, .hljs-params { color: var(--syn-attr); }
+.hljs-meta, .hljs-doctag, .hljs-tag, .hljs-name { color: var(--syn-meta); }
+.hljs-comment, .hljs-quote, .hljs-deletion { color: var(--syn-com); font-style: italic; }

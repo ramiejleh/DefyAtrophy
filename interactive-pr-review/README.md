@@ -11,6 +11,8 @@ the comments back and Claude posts them to the PR at the exact lines you chose.
 The diff shown is always byte-for-byte what GitHub returns. Claude only groups, orders,
 highlights, and annotates it — it never rewrites the code under review.
 
+![The review UI: PR overview, a group with things worth confirming, its files, and the diff with an insight](docs/pr-review.jpg)
+
 ## Highlights
 
 - **PR overview** — a section at the top gives a concise, holistic summary of what the PR

@@ -9,7 +9,7 @@
 [![Node.js ≥ 20](https://img.shields.io/badge/node-%E2%89%A520-5ab8ff.svg)](https://nodejs.org)
 [![Dependencies: none](https://img.shields.io/badge/dependencies-none-8bd17c.svg)](#line-by-line)
 
-[Install](#install) · [Plugins](#plugins) · [line-by-line](#line-by-line) · [Contributing](#contributing)
+[Install](#install) · [Plugins](#plugins) · [line-by-line](#line-by-line) · [interactive-pr-review](#interactive-pr-review) · [walkthrough](#walkthrough) · [Contributing](#contributing)
 
 </div>
 
@@ -25,8 +25,8 @@ plugins that put you back in the loop, without slowing Claude down.
 | Plugin | What it does |
 | --- | --- |
 | [**line-by-line**](./line-by-line) | Claude solves the task in a scratch worktree, and **you** build it into your project in a browser game. Type it with a note on every line, write the logic yourself and get each file graded, or tab through any code (a branch, or "the auth implementation") line by line. [More below ↓](#line-by-line) |
-| [**interactive-pr-review**](./interactive-pr-review) | Review GitHub PRs in a local UI. Claude groups the diff into logical chunks with neutral descriptions and inline insights, and posts your line comments back to GitHub in one click. |
-| [**walkthrough**](./walkthrough) | Turns a feature into a paginated HTML walkthrough you read like a book: real code in execution order, one step per page, explanations behind a click. |
+| [**interactive-pr-review**](./interactive-pr-review) | Review GitHub PRs in a local UI. Claude groups the diff into logical chunks with neutral descriptions and inline insights, and posts your line comments back to GitHub in one click. [More below ↓](#interactive-pr-review) |
+| [**walkthrough**](./walkthrough) | Turns a feature into a paginated HTML walkthrough you read like a book: real code in execution order, one step per page, explanations behind a click. [More below ↓](#walkthrough) |
 
 ## Install
 
@@ -152,6 +152,46 @@ file is written into your project as you finish it.
 See [`line-by-line/README.md`](./line-by-line/README.md) for the full guide.
 
 <p align="center"><img src="line-by-line/docs/map.jpg" alt="The line-by-line map: steps as spools joined by a thread" width="80%"></p>
+
+---
+
+## interactive-pr-review
+
+![The review UI: PR overview, a group with things worth confirming, its files, and the diff with an insight](interactive-pr-review/docs/pr-review.jpg)
+
+`/interactive-pr-review:review <pr-number>` fetches the PR and builds a local review UI. The diff is
+exactly what GitHub shows, grouped into logical chunks with a plain-language overview, neutral
+descriptions, a short "things worth confirming" list per group, and inline insights. Comment on lines,
+files or the whole PR, and Claude posts the comments back to GitHub as a review.
+
+```text
+/plugin install interactive-pr-review@DefyAtrophy
+/interactive-pr-review:review 128
+```
+
+Needs the [GitHub CLI](https://cli.github.com) (`gh auth login`). Full guide:
+[interactive-pr-review/README.md](./interactive-pr-review/README.md).
+
+## walkthrough
+
+<table>
+<tr>
+<td width="50%"><img src="walkthrough/docs/walkthrough-hidden.jpg" alt="A walkthrough page with the explanation hidden"></td>
+<td width="50%"><img src="walkthrough/docs/walkthrough.jpg" alt="The same page with the explanation revealed"></td>
+</tr>
+</table>
+
+`/walkthrough <what to understand>` (for example, `/walkthrough the auth of this application`) traces
+the feature through your code and builds a self-contained HTML page you read like a book: one step per
+page, real code with the relevant lines highlighted, and the explanation hidden until you click. You
+read the code first, then check yourself.
+
+```text
+/plugin install walkthrough@DefyAtrophy
+/walkthrough how uploads get processed
+```
+
+Full guide: [walkthrough/README.md](./walkthrough/README.md).
 
 ---
 

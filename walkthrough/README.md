@@ -23,25 +23,16 @@ first, the machine confirms second.
 
 ## What a page looks like
 
-```
-┌──────────────────────────────────────────────────┐
-│  STEP 4 OF 11                                     │
-│  Where the token gets refreshed                   │
-├──────────────────────────────────────────────────┤
-│  src/auth/session.ts                      42–91   │
-│    42   const stale = Date.now() > exp - SKEW;    │
-│  ▸ 44   if (stale) await refresh(token);          │
-│  ▸ 45     queue.flush();                          │
-│  ① What does this do?                             │
-│    47   return session;                           │
-│         ⋯ 31 lines hidden                         │
-│    86   async function drain(queue) {             │
-│  ▸ 88     for (const job of queue) await job();   │
-│  ② What does this do?                             │
-├──────────────────────────────────────────────────┤
-│  ◀ prev              ●●●●○○○○○○○           next ▶ │
-└──────────────────────────────────────────────────┘
-```
+<table>
+<tr>
+<td width="50%"><img src="docs/walkthrough-hidden.jpg" alt="A walkthrough page: the step's code highlighted, the explanation still hidden"></td>
+<td width="50%"><img src="docs/walkthrough.jpg" alt="The same page after clicking: the explanation revealed under the code"></td>
+</tr>
+<tr>
+<td align="center"><sub>Read the highlighted lines first…</sub></td>
+<td align="center"><sub>…then check yourself against the explanation.</sub></td>
+</tr>
+</table>
 
 Highlighted lines are the step; the dimmed lines around them are context. A step
 can highlight several places at once — the interesting moments are usually the

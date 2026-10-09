@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Rami Ejleh that keep a human in the loop as the machine speeds up \u2014 installable from the ramiejleh/DefyAtrophy GitHub repo.",
-    "version": "1.3.0"
+    "version": "1.3.1"
   },
   "plugins": [
     {
       "name": "interactive-pr-review",
       "source": "./interactive-pr-review",
       "description": "Interactively review GitHub PRs (comments only) \u2014 Claude fetches the PR, writes a holistic overview, groups the diff into logical chunks with neutral descriptions, a 'things worth confirming' list, and inline insight bubbles explaining the code, presents them in a review UI with a sidebar and IDE-highlighted diffs (full diff per group), and posts your line- and file-level comments back to GitHub in one click.",
-      "version": "1.25.0",
+      "version": "1.25.1",
       "author": {
         "name": "Rami Ejleh",
         "url": "https://github.com/ramiejleh"
@@ -34,7 +34,7 @@
       "name": "walkthrough",
       "source": "./walkthrough",
       "description": "Turns a feature into a paginated HTML walkthrough you read like a book. `/walkthrough the auth of this application` traces the flow, then builds a self-contained page: one step per page, real code excerpts in execution order with the relevant lines highlighted, and the explanation for each hidden behind a click \u2014 so you read the code and form your own understanding before checking it. Works on any existing code, whoever wrote it and whenever.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Rami Ejleh",
         "url": "https://github.com/ramiejleh"

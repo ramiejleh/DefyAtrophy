@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { request } from "node:http";
 import { join } from "node:path";
 import { test } from "node:test";
-import { validate } from "../lib/validate.js";
+import { validate } from "../../line-by-line/lib/validate.js";
 import { makeReviewSession, makeSession, startServer } from "./helpers.js";
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0, 0, 1, 2, 3]);

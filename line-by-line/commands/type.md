@@ -1,7 +1,6 @@
 ---
 description: Solve a coding task in a scratch worktree, then have the user type the solution into their project line by line, with a note explaining every line and a graded reflection after each step.
 argument-hint: <task description>
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill
 ---
 
 # Line by Line: type mode

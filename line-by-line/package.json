@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Claude Code plugin: type, write or step through code line by line.",
   "scripts": {
-    "test": "node --test \"test/*.test.js\""
+    "test": "cd ../tests/line-by-line && node --test \"*.test.js\""
   },
   "engines": {
     "node": ">=20"

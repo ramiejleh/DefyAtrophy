@@ -214,6 +214,7 @@ Full guide: [walkthrough/README.md](./walkthrough/README.md).
 ├── line-by-line/                     # plugin: write the code yourself, line by line
 ├── interactive-pr-review/            # plugin: review GitHub PRs in a local UI
 ├── walkthrough/                      # plugin: paginated code walkthroughs
+├── tests/line-by-line/               # line-by-line's development tests (not shipped with the plugin)
 ├── LICENSE
 └── README.md
 ```

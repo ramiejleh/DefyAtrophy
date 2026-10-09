@@ -1,7 +1,6 @@
 ---
 description: Step through code line by line, with a note on every line, by tabbing (no typing, nothing written). Either your current branch's changes in a logical order, or a walkthrough of existing code — e.g. "/line-by-line:review the auth implementation".
 argument-hint: "[base ref | what to walk through, e.g. \"the auth implementation\"]"
-allowed-tools: Bash, Read, Write, Glob, Grep, Skill, Monitor
 ---
 
 # Line by Line: review mode

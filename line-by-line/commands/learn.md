@@ -1,7 +1,6 @@
 ---
 description: Practise writing code. Claude designs the architecture (files, signatures, specs) and solves the task in a scratch worktree; the user writes the implementation themselves in the game, file by file, and Claude grades each file by running the project's checks and reviewing it.
 argument-hint: <task description>
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill
 ---
 
 # Line by Line: learn mode

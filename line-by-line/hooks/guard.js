@@ -3,9 +3,17 @@
 // to the user instead of happening silently. Everything else passes through untouched.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 const SESSION_DIR = ".line-by-line";
+
+/** The project root: the nearest folder at or above `dir` that holds .line-by-line/. Null if there is none. */
+function projectRoot(dir) {
+  for (let d = resolve(dir); ; d = dirname(d)) {
+    if (existsSync(join(d, SESSION_DIR))) return d;
+    if (dirname(d) === d) return null;
+  }
+}
 
 function activeSessions(root) {
   const base = join(root, SESSION_DIR);
@@ -28,10 +36,11 @@ let input = "";
 for await (const chunk of process.stdin) input += chunk;
 try {
   const event = JSON.parse(input);
-  const root = resolve(process.env.CLAUDE_PROJECT_DIR || event.cwd || process.cwd());
+  const cwd = event.cwd || process.cwd();
+  const root = projectRoot(cwd);
   const target = event.tool_input?.file_path ?? event.tool_input?.notebook_path;
-  if (target) {
-    const full = isAbsolute(target) ? target : resolve(event.cwd || root, target);
+  if (root && target) {
+    const full = isAbsolute(target) ? target : resolve(cwd, target);
     const rel = relative(root, full);
     const inProject = rel && !rel.startsWith("..") && !isAbsolute(rel);
     const inSessionData = rel === SESSION_DIR || rel.startsWith(SESSION_DIR + sep);

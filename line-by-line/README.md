@@ -141,8 +141,8 @@ Highlighting and the learn-mode editor use a vendored, unmodified copy of [CodeM
 
 ```
 npm test                                             # unit, API, CLI and hook tests (node:test)
-node test/fixtures/demo.js type|learn|review          # build a demo session, print the serve command
-PUPPETEER=<dir>/node_modules/puppeteer-core CHROME=<chrome binary> node test/e2e.mjs   # browser e2e
+node ../tests/line-by-line/fixtures/demo.js type|learn|review   # build a demo session, print the serve command
+PUPPETEER=<dir>/node_modules/puppeteer-core CHROME=<chrome binary> node ../tests/line-by-line/e2e.mjs   # browser e2e
 claude --plugin-dir ./line-by-line                    # try the plugin locally
 ```
 

@@ -1,0 +1,9 @@
+{
+  "name": "line-by-line-tests",
+  "private": true,
+  "type": "module",
+  "description": "Development tests for the line-by-line plugin. Not shipped with the plugin.",
+  "scripts": {
+    "test": "node --test \"*.test.js\""
+  }
+}

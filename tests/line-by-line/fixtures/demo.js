@@ -5,8 +5,8 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { assemble, build, buildFocus } from "../../lib/build.js";
-import { dirSource, gitSource } from "../../lib/sources.js";
+import { assemble, build, buildFocus } from "../../../line-by-line/lib/build.js";
+import { dirSource, gitSource } from "../../../line-by-line/lib/sources.js";
 import { makeRepo, makeSolution, sh, writeFiles } from "../helpers.js";
 
 export const BEFORE = {
@@ -244,5 +244,5 @@ export function makeDemo(mode = "type") {
 
 if (process.argv[1]?.endsWith("demo.js")) {
   const { project, sessionDir } = makeDemo(process.argv[2] ?? "type");
-  console.log(`node ${join(import.meta.dirname, "..", "..", "cli", "line-by-line")} serve --session ${sessionDir} --project ${project}`);
+  console.log(`node ${join(import.meta.dirname, "..", "..", "..", "line-by-line", "cli", "line-by-line")} serve --session ${sessionDir} --project ${project}`);
 }

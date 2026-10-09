@@ -1613,7 +1613,8 @@ kbd {
   background: rgba(124, 140, 255, 0.25);
 }
 
-.cm-s-lbl .lbl-given {
+/* Dim the code, not the whole line: opacity on the line wrapper would hide its line number. */
+.cm-s-lbl .lbl-given .CodeMirror-line {
   opacity: 0.55;
 }
 

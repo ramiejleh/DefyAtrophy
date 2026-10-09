@@ -89,6 +89,15 @@ const NOTES = {
   "tools/main.go": ["A counted loop: `i` goes 0, 1.", "Print the counter (Go uses a tab to indent).", "Closes the loop."],
 };
 
+const REMOVED_NOTES = {
+  "src/http/client.ts": [
+    "The request used to run exactly once. It moves inside `retry` below.",
+    "Same status check, now inside the retried function, so a bad status triggers another try.",
+    "Same result, now returned from the retried function.",
+  ],
+  "src/legacy.ts": ["The old hand-rolled retry is gone: `src/retry.ts` replaces it.", "`config.retries` replaces this constant."],
+};
+
 const STEPS = [
   {
     id: "01-retry-helper",
@@ -150,7 +159,10 @@ function writeNotes(dir) {
     const path = key.slice(0, key.lastIndexOf(":"));
     const removed = key.slice(key.lastIndexOf(":") + 1).startsWith("-");
     used[path] ??= 0;
-    const note = removed ? "Removed: the old version of this line." : (NOTES[path]?.[used[path]++] ?? `Part of ${path}.`);
+    used[`-${path}`] ??= 0;
+    const note = removed
+      ? (REMOVED_NOTES[path]?.[used[`-${path}`]++] ?? "Removed: the old version of this line.")
+      : (NOTES[path]?.[used[path]++] ?? `Part of ${path}.`);
     out.push(`${key}\t${note}`);
   }
   writeFileSync(join(dir, "notes.txt"), out.join("\n") + "\n");

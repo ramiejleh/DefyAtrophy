@@ -134,6 +134,9 @@ function buildEditor(info) {
     indentWithTabs: usesTabs,
     readOnly: readOnly ? "nocursor" : false,
     viewportMargin: Infinity,
+    // A fixed gutter is positioned by measuring the page, and with reduced motion CodeMirror measured it
+    // 30px off, on top of the code. A gutter that scrolls with the code needs no measuring.
+    fixedGutter: false,
     extraKeys: { Tab: (c) => (c.somethingSelected() ? c.indentSelection("add") : c.replaceSelection(usesTabs ? "\t" : " ".repeat(c.getOption("indentUnit")))) },
   });
   v.cm = cm;
@@ -188,6 +191,9 @@ function buildEditor(info) {
   }
   showSpecAtCursor();
   requestAnimationFrame(() => cm.refresh());
+  // CodeMirror measures the gutter with whatever font is loaded at the time. If the web font arrives
+  // later, the text ends up under the line numbers until it measures again.
+  document.fonts?.ready.then(() => v?.cm === cm && cm.refresh());
 }
 
 /** The current range of hole number `i` (index into v.parts). */

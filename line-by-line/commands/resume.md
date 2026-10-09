@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill
 
 # Resume a line-by-line session
 
-`lbl` means `"${CLAUDE_PLUGIN_ROOT}/bin/line-by-line"`.
+`lbl` means `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line"`.
 
 1. Run `lbl list` from the project root. Pick the session named in `$ARGUMENTS`, or the only/most
    recent one that isn't complete. If it's ambiguous, ask. `SESSION=.line-by-line/<slug>`.

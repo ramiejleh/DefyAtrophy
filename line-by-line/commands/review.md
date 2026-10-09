@@ -10,7 +10,7 @@ The user wants to read code carefully, one line at a time, in an order that make
 the order and write a note for every line. The game lets them step through with Tab or the arrow
 keys. It never writes to the project, and nothing goes anywhere else.
 
-Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/bin/line-by-line"`. Always call it by that full path.
+Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line"`. Always call it by that full path.
 
 ## 0. Which kind of review
 

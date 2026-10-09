@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Added to Claude's Bash PATH while the plugin is enabled.
+// The line-by-line CLI. Commands call it by its full path, "${CLAUDE_PLUGIN_ROOT}/cli/line-by-line".
+// (Not in bin/: claude.ai and Cowork refuse plugins with a top-level bin/ directory.)
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { realpathSync } from "node:fs";

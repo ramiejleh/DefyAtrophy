@@ -51,7 +51,7 @@ Swap `line-by-line` for `interactive-pr-review` or `walkthrough` to install the 
 
 > Write the code yourself, line by line.
 
-![A step in line-by-line: the files drawn inside their real folders, numbered in a suggested order, with import arrows](line-by-line/docs/step-diagram.jpg)
+![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](line-by-line/docs/demo.gif)
 
 Ask Claude for a feature as usual. Claude solves it out of sight, in a scratch git worktree, and checks
 it with your project's own tests. Then, instead of Claude writing the files, **you** build them into
@@ -140,6 +140,9 @@ file is written into your project as you finish it.
 - **Map → step → file.** Steps unlock in order. Each step shows its files inside their real folders,
   numbered in a suggested order, with arrows for who imports whom. Open files in any order; reopen
   finished ones to read them.
+
+  ![A step: the files drawn inside their real folders, numbered in a suggested order, with import arrows](line-by-line/docs/step-diagram.jpg)
+
 - **Safe by default.** The game server listens on `127.0.0.1` only, needs the token in the URL Claude
   gives you, refuses other sites (CSRF and DNS rebinding), and only writes the session's own files,
   inside your project. Symlinks can't redirect a write outside it. A hook asks you before Claude

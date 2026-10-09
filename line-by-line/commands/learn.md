@@ -11,7 +11,7 @@ solution, out of sight, in a scratch copy of the project. The game then shows th
 structure in place (imports, types, signatures, unchanged code: locked) and **holes** where the real
 work goes. They write those parts freely, submit each file, and you grade it.
 
-Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/bin/line-by-line"`. Always call it by that full path.
+Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line"`. Always call it by that full path.
 
 ## The rule that matters
 

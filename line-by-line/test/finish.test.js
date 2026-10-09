@@ -6,7 +6,7 @@ import { after, test } from "node:test";
 import { author, makeRepo, sh, writeFiles } from "./helpers.js";
 import { startServer } from "./helpers.js";
 
-const BIN = join(import.meta.dirname, "..", "bin", "line-by-line");
+const BIN = join(import.meta.dirname, "..", "cli", "line-by-line");
 const run = (cwd, ...args) => {
   const r = spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8" });
   return { code: r.status, out: r.stdout + r.stderr };

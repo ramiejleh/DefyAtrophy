@@ -244,5 +244,5 @@ export function makeDemo(mode = "type") {
 
 if (process.argv[1]?.endsWith("demo.js")) {
   const { project, sessionDir } = makeDemo(process.argv[2] ?? "type");
-  console.log(`node ${join(import.meta.dirname, "..", "..", "bin", "line-by-line")} serve --session ${sessionDir} --project ${project}`);
+  console.log(`node ${join(import.meta.dirname, "..", "..", "cli", "line-by-line")} serve --session ${sessionDir} --project ${project}`);
 }

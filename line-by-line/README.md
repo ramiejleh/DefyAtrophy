@@ -16,6 +16,8 @@ writes into the project while a session is running. When a session ends, Claude 
 it: the scratch worktree, the session data and the git exclude entry. Your project is left exactly as if
 the code had been written directly.
 
+![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](docs/demo.gif)
+
 ![A step: its files in their real folders, numbered in a suggested order, with import arrows](docs/step-diagram.jpg)
 
 ## How it plays
@@ -90,7 +92,7 @@ project.
 
 ## Under the hood
 
-`bin/line-by-line` is a small CLI with no dependencies that Claude drives:
+`cli/line-by-line` is a small CLI with no dependencies that Claude drives:
 
 ```
 line-by-line build     --mode type|learn|review …   diff the solution (or the branch) into a draft

@@ -66,6 +66,7 @@ const openCard = async (page, path) => {
   await sleep(400);
 };
 
+/** Nothing on screen should ever show a value that failed to render. */
 const noBrokenText = async (page) => {
   const text = await page.evaluate(() => document.body.innerText);
   assert.ok(!/\bundefined\b|\bNaN\b|\[object Object\]/.test(text), "no broken values rendered");

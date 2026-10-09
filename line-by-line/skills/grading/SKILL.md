@@ -35,7 +35,7 @@ last attempt?"). If they rewrite a reflection, a new `LBL reflection` arrives. G
 
 ## File submissions (learn mode): `LBL submit <stepId> <path> <n>`
 
-1. Run `"${CLAUDE_PLUGIN_ROOT}/bin/line-by-line" check "$SESSION" "<path>"`. It rebuilds attempt `n`
+1. Run `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line" check "$SESSION" "<path>"`. It rebuilds attempt `n`
    into `$SESSION/check/` (a copy of the reference solution) and prints the file's location and the
    grade file to write.
 2. **Run the project's checks from `$SESSION/check/`**: the relevant tests, the type-check, the lint

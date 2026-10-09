@@ -10,7 +10,7 @@ The user wants to build **$ARGUMENTS** themselves. You solve it first, out of si
 copy of the project. They then type your solution into the real project in a browser game, one line
 at a time, with your note for every line, and explain each step back to you in a reflection you grade.
 
-Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/bin/line-by-line"`. Always call it by that full path.
+Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line"`. Always call it by that full path.
 
 ## The rule that matters
 

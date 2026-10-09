@@ -6,7 +6,7 @@ allowed-tools: Bash
 
 # Clean up line-by-line sessions
 
-`lbl` means `"${CLAUDE_PLUGIN_ROOT}/bin/line-by-line"`.
+`lbl` means `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line"`.
 
 1. Run `lbl list`. Take the session named in `$ARGUMENTS`, or all of them.
 2. Show what will go: each session's directory (`.line-by-line/<slug>/`) and whether it has a running

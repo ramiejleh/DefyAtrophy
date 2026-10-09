@@ -56,7 +56,7 @@ https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
 <details>
 <summary>Can't play the video here? An animated preview</summary>
 
-![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](line-by-line/docs/demo.gif)
+![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](docs/line-by-line-demo.gif)
 
 </details>
 
@@ -210,6 +210,7 @@ Full guide: [walkthrough/README.md](./walkthrough/README.md).
 ```text
 .
 ├── .claude-plugin/marketplace.json   # the marketplace listing
+├── docs/                             # README media too large to ship inside a plugin
 ├── line-by-line/                     # plugin: write the code yourself, line by line
 ├── interactive-pr-review/            # plugin: review GitHub PRs in a local UI
 ├── walkthrough/                      # plugin: paginated code walkthroughs

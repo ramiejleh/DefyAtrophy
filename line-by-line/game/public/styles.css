@@ -1,3 +1,20 @@
+/* Fonts are bundled (SIL Open Font License, see vendor/fonts/OFL.txt) so the game makes no outside requests. */
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("vendor/fonts/space-grotesk-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("vendor/fonts/jetbrains-mono-latin.woff2") format("woff2");
+}
+
 :root {
   --bg: #0a0e1c;
   --panel: rgba(255, 255, 255, 0.045);

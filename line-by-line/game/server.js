@@ -13,6 +13,7 @@ const MIME = {
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
 };
 const REVEAL_AFTER = 3;
 const MIN_REFLECTION = 120;

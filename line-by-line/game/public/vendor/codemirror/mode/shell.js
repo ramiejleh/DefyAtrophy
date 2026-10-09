@@ -1,1 +1,168 @@
-!function(e){"object"==typeof exports&&"object"==typeof module?e(require("../../lib/codemirror")):"function"==typeof define&&define.amd?define(["../../lib/codemirror"],e):e(CodeMirror)}(function(s){"use strict";s.defineMode("shell",function(){var o={};function e(e,t){for(var n=0;n<t.length;n++)o[t[n]]=e}var t=["true","false"],n=["if","then","do","else","elif","while","until","for","in","esac","fi","fin","fil","done","exit","set","unset","export","function"],r=["ab","awk","bash","beep","cat","cc","cd","chown","chmod","chroot","clear","cp","curl","cut","diff","echo","find","gawk","gcc","get","git","grep","hg","kill","killall","ln","ls","make","mkdir","openssl","mv","nc","nl","node","npm","ping","ps","restart","rm","rmdir","sed","service","sh","shopt","shred","source","sort","sleep","ssh","start","stop","su","sudo","svn","tee","telnet","top","touch","vi","vim","wall","wc","wget","who","write","yes","zsh"];function i(e,t){if(e.eatSpace())return null;var n,r=e.sol(),i=e.next();if("\\"===i)return e.next(),null;if("'"===i||'"'===i||"`"===i)return t.tokens.unshift(f(i,"`"===i?"quote":"string")),l(e,t);if("#"===i)return r&&e.eat("!")?(e.skipToEnd(),"meta"):(e.skipToEnd(),"comment");if("$"===i)return t.tokens.unshift(u),l(e,t);if("+"===i||"="===i)return"operator";if("-"===i)return e.eat("-"),e.eatWhile(/\w/),"attribute";if("<"==i){if(e.match("<<"))return"operator";r=e.match(/^<-?\s*['"]?([^'"]*)['"]?/);if(r)return t.tokens.unshift((n=r[1],function(e,t){return e.sol()&&e.string==n&&t.tokens.shift(),e.skipToEnd(),"string-2"})),"string-2"}if(/\d/.test(i)&&(e.eatWhile(/\d/),e.eol()||!/\w/.test(e.peek())))return"number";e.eatWhile(/[\w-]/);t=e.current();return"="===e.peek()&&/\w+/.test(t)?"def":o.hasOwnProperty(t)?o[t]:null}function f(i,o){var s="("==i?")":"{"==i?"}":i;return function(e,t){for(var n,r=!1;null!=(n=e.next());){if(n===s&&!r){t.tokens.shift();break}if("$"===n&&!r&&"'"!==i&&e.peek()!=s){r=!0,e.backUp(1),t.tokens.unshift(u);break}if(!r&&i!==s&&n===i)return t.tokens.unshift(f(i,o)),l(e,t);if(!r&&/['"]/.test(n)&&!/['"]/.test(i)){t.tokens.unshift(function(n,r){return function(e,t){return t.tokens[0]=f(n,r),e.next(),l(e,t)}}(n,"string")),e.backUp(1);break}r=!r&&"\\"===n}return o}}s.registerHelper("hintWords","shell",t.concat(n,r)),e("atom",t),e("keyword",n),e("builtin",r);var u=function(e,t){1<t.tokens.length&&e.eat("$");var n=e.next();return/['"({]/.test(n)?(t.tokens[0]=f(n,"("==n?"quote":"{"==n?"def":"string"),l(e,t)):(/\d/.test(n)||e.eatWhile(/\w/),t.tokens.shift(),"def")};function l(e,t){return(t.tokens[0]||i)(e,t)}return{startState:function(){return{tokens:[]}},token:l,closeBrackets:"()[]{}''\"\"``",lineComment:"#",fold:"brace"}}),s.defineMIME("text/x-sh","shell"),s.defineMIME("application/x-sh","shell")});
+// CodeMirror, copyright (c) by Marijn Haverbeke and others
+// Distributed under an MIT license: https://codemirror.net/5/LICENSE
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../../lib/codemirror"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../../lib/codemirror"], mod);
+  else // Plain browser env
+    mod(CodeMirror);
+})(function(CodeMirror) {
+"use strict";
+
+CodeMirror.defineMode('shell', function() {
+
+  var words = {};
+  function define(style, dict) {
+    for(var i = 0; i < dict.length; i++) {
+      words[dict[i]] = style;
+    }
+  };
+
+  var commonAtoms = ["true", "false"];
+  var commonKeywords = ["if", "then", "do", "else", "elif", "while", "until", "for", "in", "esac", "fi",
+    "fin", "fil", "done", "exit", "set", "unset", "export", "function"];
+  var commonCommands = ["ab", "awk", "bash", "beep", "cat", "cc", "cd", "chown", "chmod", "chroot", "clear",
+    "cp", "curl", "cut", "diff", "echo", "find", "gawk", "gcc", "get", "git", "grep", "hg", "kill", "killall",
+    "ln", "ls", "make", "mkdir", "openssl", "mv", "nc", "nl", "node", "npm", "ping", "ps", "restart", "rm",
+    "rmdir", "sed", "service", "sh", "shopt", "shred", "source", "sort", "sleep", "ssh", "start", "stop",
+    "su", "sudo", "svn", "tee", "telnet", "top", "touch", "vi", "vim", "wall", "wc", "wget", "who", "write",
+    "yes", "zsh"];
+
+  CodeMirror.registerHelper("hintWords", "shell", commonAtoms.concat(commonKeywords, commonCommands));
+
+  define('atom', commonAtoms);
+  define('keyword', commonKeywords);
+  define('builtin', commonCommands);
+
+  function tokenBase(stream, state) {
+    if (stream.eatSpace()) return null;
+
+    var sol = stream.sol();
+    var ch = stream.next();
+
+    if (ch === '\\') {
+      stream.next();
+      return null;
+    }
+    if (ch === '\'' || ch === '"' || ch === '`') {
+      state.tokens.unshift(tokenString(ch, ch === "`" ? "quote" : "string"));
+      return tokenize(stream, state);
+    }
+    if (ch === '#') {
+      if (sol && stream.eat('!')) {
+        stream.skipToEnd();
+        return 'meta'; // 'comment'?
+      }
+      stream.skipToEnd();
+      return 'comment';
+    }
+    if (ch === '$') {
+      state.tokens.unshift(tokenDollar);
+      return tokenize(stream, state);
+    }
+    if (ch === '+' || ch === '=') {
+      return 'operator';
+    }
+    if (ch === '-') {
+      stream.eat('-');
+      stream.eatWhile(/\w/);
+      return 'attribute';
+    }
+    if (ch == "<") {
+      if (stream.match("<<")) return "operator"
+      var heredoc = stream.match(/^<-?\s*['"]?([^'"]*)['"]?/)
+      if (heredoc) {
+        state.tokens.unshift(tokenHeredoc(heredoc[1]))
+        return 'string-2'
+      }
+    }
+    if (/\d/.test(ch)) {
+      stream.eatWhile(/\d/);
+      if(stream.eol() || !/\w/.test(stream.peek())) {
+        return 'number';
+      }
+    }
+    stream.eatWhile(/[\w-]/);
+    var cur = stream.current();
+    if (stream.peek() === '=' && /\w+/.test(cur)) return 'def';
+    return words.hasOwnProperty(cur) ? words[cur] : null;
+  }
+
+  function tokenString(quote, style) {
+    var close = quote == "(" ? ")" : quote == "{" ? "}" : quote
+    return function(stream, state) {
+      var next, escaped = false;
+      while ((next = stream.next()) != null) {
+        if (next === close && !escaped) {
+          state.tokens.shift();
+          break;
+        } else if (next === '$' && !escaped && quote !== "'" && stream.peek() != close) {
+          escaped = true;
+          stream.backUp(1);
+          state.tokens.unshift(tokenDollar);
+          break;
+        } else if (!escaped && quote !== close && next === quote) {
+          state.tokens.unshift(tokenString(quote, style))
+          return tokenize(stream, state)
+        } else if (!escaped && /['"]/.test(next) && !/['"]/.test(quote)) {
+          state.tokens.unshift(tokenStringStart(next, "string"));
+          stream.backUp(1);
+          break;
+        }
+        escaped = !escaped && next === '\\';
+      }
+      return style;
+    };
+  };
+
+  function tokenStringStart(quote, style) {
+    return function(stream, state) {
+      state.tokens[0] = tokenString(quote, style)
+      stream.next()
+      return tokenize(stream, state)
+    }
+  }
+
+  var tokenDollar = function(stream, state) {
+    if (state.tokens.length > 1) stream.eat('$');
+    var ch = stream.next()
+    if (/['"({]/.test(ch)) {
+      state.tokens[0] = tokenString(ch, ch == "(" ? "quote" : ch == "{" ? "def" : "string");
+      return tokenize(stream, state);
+    }
+    if (!/\d/.test(ch)) stream.eatWhile(/\w/);
+    state.tokens.shift();
+    return 'def';
+  };
+
+  function tokenHeredoc(delim) {
+    return function(stream, state) {
+      if (stream.sol() && stream.string == delim) state.tokens.shift()
+      stream.skipToEnd()
+      return "string-2"
+    }
+  }
+
+  function tokenize(stream, state) {
+    return (state.tokens[0] || tokenBase) (stream, state);
+  };
+
+  return {
+    startState: function() {return {tokens:[]};},
+    token: function(stream, state) {
+      return tokenize(stream, state);
+    },
+    closeBrackets: "()[]{}''\"\"``",
+    lineComment: '#',
+    fold: "brace"
+  };
+});
+
+CodeMirror.defineMIME('text/x-sh', 'shell');
+// Apache uses a slightly different Media Type for Shell scripts
+// http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types
+CodeMirror.defineMIME('application/x-sh', 'shell');
+
+});

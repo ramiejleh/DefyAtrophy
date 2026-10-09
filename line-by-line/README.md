@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
 <details>
 <summary>Can't play the video here? An animated preview</summary>
 
-![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](docs/demo.gif)
+![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](https://raw.githubusercontent.com/ramiejleh/DefyAtrophy/main/docs/line-by-line-demo.gif)
 
 </details>
 
@@ -97,6 +97,27 @@ The game server only listens on `127.0.0.1`, needs the per-launch token in the U
 refuses requests from other sites, and only writes files that belong to the session, inside the
 project.
 
+## What it runs, and what leaves your machine
+
+Nothing leaves your machine. The plugin makes no network requests of its own: no analytics, no telemetry, no
+external services, and the game's fonts and editor are bundled.
+
+What it does run, all locally:
+- **git**: `git worktree` for Claude's scratch copy (type and learn mode), and `git diff`, `git show` and
+  `git merge-base` to read the changes (review mode).
+- **Node.js**: the `cli/line-by-line` CLI, which builds, validates and checks sessions, and starts the game
+  server.
+- **A game server** on `127.0.0.1` only, on a free port, for the browser game. It needs the per-launch token in the
+  URL, refuses requests from other sites, and only writes the session's own files inside your project.
+- **Your browser**: `serve` opens the game URL with `open`, `xdg-open` or `start`.
+- **Your project's own checks** (tests, type-check, build), which Claude runs as part of type and learn mode.
+- **A PreToolUse hook** (`hooks/guard.js`). While a game is running, it asks you before Claude edits your project.
+  It reads only the tool call it's given and the session's marker files.
+
+What it writes: session data under `.line-by-line/<slug>/` in your project (git-ignored through
+`.git/info/exclude`), the files you finish in the game, and nothing else. `line-by-line finish` removes the session
+data, the worktree and the exclude entry when a session ends.
+
 ## Under the hood
 
 `cli/line-by-line` is a small CLI with no dependencies that Claude drives:
@@ -113,8 +134,8 @@ line-by-line list
 line-by-line finish    <session>                    stop the server, remove the worktree and every trace of the session
 ```
 
-Highlighting and the learn-mode editor use a vendored [CodeMirror 5](https://codemirror.net/5/) (MIT),
-so the game works offline.
+Highlighting and the learn-mode editor use a vendored, unmodified copy of [CodeMirror 5.65.18](https://codemirror.net/5/)
+(MIT), and the fonts are Space Grotesk and JetBrains Mono (SIL Open Font License), so the game works offline.
 
 ## Development
 

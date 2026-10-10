@@ -30,7 +30,8 @@ https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
 ## How it plays
 
 1. **Steps.** The task is split into a few steps that build on each other, drawn as spools on a thread.
-   In type and learn mode, each step unlocks when the previous one is done.
+   In type mode, a step unlocks once you've written the previous step's reflection; in learn mode, once
+   the previous step's files are done. Review mode never locks steps.
 2. **Where the files live.** Opening a step shows its files inside their real folders, numbered in a
    suggested order, with arrows for who imports whom and a few existing files for context. Open any
    file in any order. Finished files reopen read-only.
@@ -43,10 +44,10 @@ https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
    - **Learn mode** gives you a real editor. Claude's lines are locked, and the highlighted parts are
      yours to write. Put the cursor in one to see its spec. Submit the file, and Claude runs your
      project's checks against your code and reviews it, with inline comments. You can ask for a hint;
-     after three graded attempts you can reveal Claude's version of a part.
+     after three graded attempts that didn't pass, you can reveal Claude's version of a part.
    - **Review mode** steps through every added and removed line with Tab, Enter or the arrow keys.
-4. **After each step** (type mode), you explain what you built in your own words, and Claude grades it
-   within seconds.
+4. **After each step** (type mode), you explain what you built in your own words, and Claude grades it,
+   usually in under a minute.
 
 | Type | Learn | Review |
 |---|---|---|
@@ -90,12 +91,13 @@ folder itself once no other sessions are left.
   reflections/ grades/    your reflections, Claude's grades
   submissions/ hints/     learn mode
   worktree/               Claude's scratch solution
+  check/                  learn mode: a copy where your submissions are tested
   server.log              game events Claude listens to
 ```
 
-The game server only listens on `127.0.0.1`, needs the per-launch token in the URL Claude gives you,
-refuses requests from other sites, and only writes files that belong to the session, inside the
-project.
+The game server only listens on `127.0.0.1`. Its data requests need the per-launch token in the URL
+Claude gives you, it refuses requests from other sites, and it only writes files that belong to the
+session, inside the project.
 
 ## What it runs, and what leaves your machine
 
@@ -107,8 +109,9 @@ What it does run, all locally:
   `git merge-base` to read the changes (review mode).
 - **Node.js**: the `cli/line-by-line` CLI, which builds, validates and checks sessions, and starts the game
   server.
-- **A game server** on `127.0.0.1` only, on a free port, for the browser game. It needs the per-launch token in the
-  URL, refuses requests from other sites, and only writes the session's own files inside your project.
+- **A game server** on `127.0.0.1` only, on a free port, for the browser game. Its data requests need the
+  per-launch token in the URL, it refuses requests from other sites, and it only writes the session's own files
+  inside your project.
 - **Your browser**: `serve` opens the game URL with `open`, `xdg-open` or `start`.
 - **Your project's own checks** (tests, type-check, build), which Claude runs as part of type and learn mode.
 - **A PreToolUse hook** (`hooks/guard.js`). While a game is running, it asks you before Claude edits your project.
@@ -142,15 +145,20 @@ out. The fonts are Space Grotesk and JetBrains Mono (SIL Open Font License). Eve
 
 ## Development
 
+The tests live outside the plugin, in the repository's `tests/line-by-line/` folder, so they don't ship to users.
+From this folder (`line-by-line/`):
+
 ```
-npm test                                             # unit, API, CLI and hook tests (node:test)
+npm test                                                        # unit, API, CLI and hook tests (node:test)
 node ../tests/line-by-line/fixtures/demo.js type|learn|review   # build a demo session, print the serve command
 PUPPETEER=<dir>/node_modules/puppeteer-core CHROME=<chrome binary> node ../tests/line-by-line/e2e.mjs   # browser e2e
-claude --plugin-dir ./line-by-line                    # try the plugin locally
+claude --plugin-dir .                                           # try the plugin locally
 ```
 
 `puppeteer-core` isn't a dependency: install it in a scratch directory for the e2e run.
 
 ## License
 
-MIT © Rami Ejleh. CodeMirror is MIT © Marijn Haverbeke and others (`game/public/vendor/codemirror/LICENSE`).
+MIT © Rami Ejleh (`LICENSE`). CodeMirror is MIT © Marijn Haverbeke and others
+(`game/public/vendor/codemirror/LICENSE`). Space Grotesk and JetBrains Mono are under the SIL Open Font License
+(`game/public/vendor/fonts/OFL.txt`).

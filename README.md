@@ -75,7 +75,7 @@ been written directly: no session files, no worktree, nothing extra.
 
 Type the verified solution one line at a time, with Claude's note explaining every line. Edits to
 existing files show the whole file, and only your lines are typeable. After each step you explain what
-you built, and Claude grades it within seconds.
+you built, and Claude grades it, usually in under a minute.
 
 </td>
 <td width="50%"><img src="line-by-line/docs/type-mode.jpg" alt="Type mode: typing a file line by line with notes and a loom that fills as you go"></td>
@@ -87,7 +87,7 @@ you built, and Claude grades it within seconds.
 
 Claude designs the files, types and signatures. You write the logic in a real editor. Each file is
 graded by running **your project's checks against your code**, with inline comments, hints, and a
-"reveal" after three tries.
+"reveal" after three graded attempts that didn't pass.
 
 </td>
 <td width="50%"><img src="line-by-line/docs/learn-mode.jpg" alt="Learn mode: locked lines from Claude, a part to write, and a graded attempt with inline comments"></td>
@@ -144,20 +144,21 @@ file is written into your project as you finish it.
            line-by-line finish ──▶ worktree, session data and git exclude entry removed
 ```
 
-- **Map → step → file.** Steps unlock in order. Each step shows its files inside their real folders,
+- **Map → step → file.** In type and learn mode, steps unlock in order. Each step shows its files inside their real folders,
   numbered in a suggested order, with arrows for who imports whom. Open files in any order; reopen
   finished ones to read them.
 
   ![A step: the files drawn inside their real folders, numbered in a suggested order, with import arrows](line-by-line/docs/step-diagram.jpg)
 
-- **Safe by default.** The game server listens on `127.0.0.1` only, needs the token in the URL Claude
-  gives you, refuses other sites (CSRF and DNS rebinding), and only writes the session's own files,
-  inside your project. Symlinks can't redirect a write outside it. A hook asks you before Claude
+- **Safe by default.** The game server listens on `127.0.0.1` only, its data requests need the token in
+  the URL Claude gives you, it refuses other sites (CSRF and DNS rebinding), and it only writes the
+  session's own files, inside your project. Symlinks can't redirect a write outside it. A hook asks you before Claude
   edits your project while a game is running.
 - **Nothing left behind.** Session data lives under `.line-by-line/` (git-ignored through
   `.git/info/exclude`, so your `.gitignore` is untouched), and it's all removed when the session ends.
-- **Works offline, no dependencies.** Node.js 20+ and a browser. Syntax highlighting and the editor use
-  a vendored CodeMirror 5.
+- **Works offline, no dependencies.** Node.js 20+ and a browser. Syntax highlighting, the editor and the
+  fonts are bundled, so the game makes no outside requests and the plugin collects nothing. See the
+  [privacy policy](line-by-line/PRIVACY.md) and [terms of use](line-by-line/TERMS.md).
 
 See [`line-by-line/README.md`](./line-by-line/README.md) for the full guide.
 
@@ -235,4 +236,5 @@ Please keep plugins dependency-free where possible, and include tests with chang
 
 ## License
 
-[MIT](./LICENSE) © Rami Ejleh. line-by-line bundles [CodeMirror 5](https://codemirror.net/5/) (MIT).
+[MIT](./LICENSE) © Rami Ejleh. line-by-line bundles [CodeMirror 5](https://codemirror.net/5/) (MIT) and the
+Space Grotesk and JetBrains Mono fonts (SIL Open Font License).

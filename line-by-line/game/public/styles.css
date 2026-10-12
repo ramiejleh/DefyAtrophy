@@ -1141,6 +1141,7 @@ kbd {
 
 .play {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   height: 100%;
   gap: 14px;
@@ -1166,8 +1167,13 @@ kbd {
   min-width: 220px;
 }
 
+.hud-title > div {
+  min-width: 0;
+}
+
 .hud-title h2 {
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: 16px;
   font-weight: 600;
 }
@@ -1254,6 +1260,7 @@ kbd {
 
 .editor-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
@@ -1261,6 +1268,7 @@ kbd {
   font-family: var(--mono);
   font-size: 12px;
   color: var(--dim);
+  overflow-wrap: anywhere;
 }
 
 .editor-bar .dots {
@@ -1290,6 +1298,7 @@ kbd {
 
 .legend-inline {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
   font-family: var(--sans);
@@ -1333,11 +1342,10 @@ kbd {
   cursor: text;
 }
 
+/* Long lines wrap rather than scroll sideways, so the cursor never leaves the view. */
 .row {
   display: flex;
-  min-width: max-content;
   padding-right: 28px;
-  white-space: pre;
 }
 
 .row .ln {
@@ -1361,6 +1369,9 @@ kbd {
 
 .row .src {
   flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .row.given .src {
@@ -1416,6 +1427,12 @@ kbd {
 
 .code.review .row.seen .mark {
   background: rgba(79, 209, 139, 0.6);
+}
+
+/* Placeholder bars stay on one line and are clipped at the edge. */
+.row.pending .src {
+  white-space: pre;
+  overflow: hidden;
 }
 
 .skel {

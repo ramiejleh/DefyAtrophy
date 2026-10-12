@@ -129,6 +129,7 @@ function buildEditor(info) {
     mode: modeFor(file.language),
     theme: "lbl",
     lineNumbers: true,
+    lineWrapping: true,
     tabSize: file.tabSize ?? 2,
     indentUnit: file.tabSize ?? 2,
     indentWithTabs: usesTabs,

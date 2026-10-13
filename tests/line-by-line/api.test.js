@@ -51,13 +51,24 @@ test("type mode: every kind of file lands byte for byte", async () => {
     assert.ok(srv.events.includes(`LBL step-done ${session.steps[0].id}`));
     assert.ok(!srv.events.includes("LBL complete"), "not complete before the reflection");
 
-    const short = await srv.call("POST", "/api/reflection", { stepId: session.steps[0].id, text: "too short" });
+    const stepId = session.steps[0].id;
+    const short = await srv.call("POST", "/api/reflection", { stepId, text: "x".repeat(49) });
     assert.equal(short.status, 400);
-    const ok = await srv.call("POST", "/api/reflection", { stepId: session.steps[0].id, text: "x".repeat(130) });
+    const ok = await srv.call("POST", "/api/reflection", { stepId, text: "x".repeat(50) });
     assert.equal(ok.status, 200);
-    assert.ok(srv.events.includes(`LBL reflection ${session.steps[0].id}`));
-    assert.ok(srv.events.includes("LBL complete"));
+    assert.ok(srv.events.includes(`LBL reflection ${stepId}`));
+    assert.ok(!srv.events.includes("LBL complete"), "not complete before the reflection is graded");
+
+    // Claude writes the grade; the next poll of the state picks it up
+    const grade = (verdict) => {
+      mkdirSync(join(sessionDir, "grades", "steps"), { recursive: true });
+      writeFileSync(join(sessionDir, "grades", "steps", `${stepId}.json`), JSON.stringify({ verdict, score: 50, feedback: "" }));
+    };
+    grade("retry");
+    assert.equal((await srv.call("GET", "/api/state")).body.complete, false, "a failing reflection keeps the session open");
+    grade("partial");
     assert.equal((await srv.call("GET", "/api/state")).body.complete, true);
+    assert.ok(srv.events.includes("LBL complete"));
   } finally {
     await srv.close();
   }

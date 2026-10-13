@@ -16,7 +16,7 @@ const MIME = {
   ".woff2": "font/woff2",
 };
 const REVEAL_AFTER = 3;
-const MIN_REFLECTION = 120;
+const MIN_REFLECTION = 50;
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 export const enc = (path) => encodeURIComponent(path);
@@ -157,7 +157,9 @@ export function createGameServer({ sessionDir, projectDir, token = randomBytes(1
     const done = applied();
     if (!allFiles(session).every(({ file }) => file.path in done)) return false;
     if (!session.steps.every((s) => (s.autoApplied ?? []).every((a) => a.path in done))) return false;
-    if (session.mode === "type") return session.steps.every((s) => existsSync(at("reflections", `${s.id}.md`)));
+    // type mode: every reflection is in and graded, and none of them needs another go
+    if (session.mode === "type")
+      return session.steps.every((s) => existsSync(at("reflections", `${s.id}.md`)) && ["pass", "partial"].includes(readJson(at("grades", "steps", `${s.id}.json`), null)?.verdict));
     return true;
   }
   function maybeComplete() {
@@ -199,7 +201,11 @@ export function createGameServer({ sessionDir, projectDir, token = randomBytes(1
   const routes = {
     "GET /api/session": () => session,
 
-    "GET /api/state": () => state(),
+    // Claude writes reflection grades straight to disk, so the game's poll is where the last one completes the session.
+    "GET /api/state": () => {
+      maybeComplete();
+      return state();
+    },
 
     "PUT /api/progress": (body) => {
       writeFileSync(at("progress.json"), JSON.stringify(body, null, 2));

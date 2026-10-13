@@ -2,13 +2,18 @@
 
 import { go } from "../app.js";
 import { burst, confetti, sfx } from "../fx.js";
+import { highlightLines, spans } from "../highlight.js";
 import { swatch } from "../loom.js";
 import { computeStats, fileSize, mode, refresh, saveProgress, sessionDone, stepFilesDone, stepNumber, stepStats, store, walkthrough } from "../store.js";
-import { api, esc, md, mdInline, toast } from "../util.js";
+import { api, esc, fileName, md, mdInline, rowsOf, toast } from "../util.js";
 import { stepColor } from "./map.js";
 
-const MIN_REFLECTION = 120;
+const MIN_REFLECTION = 50;
 let shown = null;
+/** The code panel beside the reflection: whether it's open and which file it shows. */
+let peek = { open: false, file: 0 };
+
+addEventListener("keydown", (e) => e.key === "Escape" && peek.open && !document.querySelector(".overlay") && setPeek(false));
 
 export function render(params) {
   shown = params;
@@ -43,9 +48,16 @@ export function render(params) {
           }
         </div>
       </div>
-    </div>`;
+    </div>
+    ${mode() === "type" ? peekHtml(step) : ""}`;
 
-  if (mode() === "type") renderReflection(step);
+  if (mode() === "type") {
+    renderReflection(step);
+    app.querySelector("[data-peek-close]").addEventListener("click", () => setPeek(false));
+    app.querySelectorAll("[data-peek]").forEach((b) => b.addEventListener("click", () => showPeekFile(step, Number(b.dataset.peek))));
+    showPeekFile(step, peek.file);
+    setPeek(peek.open);
+  }
   app.querySelector('[data-act="map"]').addEventListener("click", () => go("map"));
   app.querySelector('[data-act="step"]').addEventListener("click", () => go("step", { stepId: step.id }));
   app.querySelector('[data-act="next"]')?.addEventListener("click", () => go("step", { stepId: next.id }));
@@ -61,6 +73,57 @@ export function render(params) {
 
 export function leave() {
   shown = null;
+  peek = { open: false, file: 0 };
+  document.querySelector(".screen")?.classList.remove("peeking");
+}
+
+/* ---------- the step's code, beside the reflection ---------- */
+
+function peekHtml(step) {
+  return `
+    <aside class="code-peek glass" id="peek" aria-label="This step's code" hidden>
+      <div class="peek-head">
+        <div class="peek-tabs" role="tablist">${step.files
+          .map((f, k) => `<button role="tab" data-peek="${k}" title="${esc(f.path)}">${esc(fileName(f.path))}</button>`)
+          .join("")}</div>
+        <button class="icon-btn" data-peek-close title="Close (Esc)" aria-label="Close the code">×</button>
+      </div>
+      <div class="peek-path"></div>
+      <div class="code read peek-code" id="peek-code" role="tabpanel"></div>
+    </aside>`;
+}
+
+function setPeek(open) {
+  const panel = document.getElementById("peek");
+  if (!panel) return;
+  peek.open = open;
+  panel.hidden = !open;
+  document.querySelector(".screen")?.classList.toggle("peeking", open);
+  document.querySelectorAll("[data-peek-open]").forEach((b) => (b.textContent = open ? "Hide the code" : "Show this step's code"));
+}
+
+function showPeekFile(step, k) {
+  const file = step.files[k] ?? step.files[0];
+  peek.file = step.files.indexOf(file);
+  document.querySelectorAll("[data-peek]").forEach((b) => b.setAttribute("aria-selected", String(Number(b.dataset.peek) === peek.file)));
+  document.querySelector(".peek-path").innerHTML = `<code>${esc(file.path)}</code>`;
+  const code = document.getElementById("peek-code");
+  code.style.tabSize = file.tabSize ?? 2;
+  code.innerHTML = codeHtml(file);
+  code.scrollTop = 0;
+}
+
+/** The file as it now reads, with removed lines struck through, highlighted like the file view. */
+function codeHtml(file) {
+  const rows = rowsOf(file).filter((r) => r.kind !== "hole");
+  const line = (r) => (r.indent ?? "") + (r.text ?? "");
+  const classes = new Map();
+  for (const group of [rows.filter((r) => r.kind !== "removed"), rows.filter((r) => r.kind === "removed")]) {
+    highlightLines(group.map(line), file.language).forEach((c, i) => classes.set(group[i], c));
+  }
+  return rows
+    .map((r) => `<div class="row ${r.kind}"><span class="ln">${r.kind === "removed" ? "−" : r.newNo}</span><span class="mark"></span><span class="src">${spans(line(r), classes.get(r))}</span></div>`)
+    .join("");
 }
 
 export function onState({ changedSteps }) {
@@ -188,8 +251,10 @@ function renderReflectionForm(step, initial) {
     <h3>Explain what you built</h3>
     <div class="feedback dim">${md(step.reflectionPrompt || "In your own words: what did you build in this step, and why is each piece needed?")}</div>
     <label class="sr-only" for="reflect">Your reflection</label>
+    <button class="btn ghost small peek-open" data-peek-open>${peek.open ? "Hide the code" : "Show this step's code"}</button>
     <textarea class="reflect" id="reflect" placeholder="In this step I built…">${esc(draft)}</textarea>
     <div class="reflect-foot"><span id="count"></span><button class="btn" id="submit">Submit for grading</button></div>`;
+  section.querySelector("[data-peek-open]").addEventListener("click", () => setPeek(!peek.open));
   const area = section.querySelector("#reflect");
   const count = section.querySelector("#count");
   const submit = section.querySelector("#submit");

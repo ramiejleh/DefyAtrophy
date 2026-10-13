@@ -137,6 +137,13 @@ async function e2eType() {
     const progress = JSON.parse(readFileSync(join(t.sessionDir, "progress.json"), "utf8"));
     assert.equal(progress.files["src/retry.ts"].stats.assisted, 1, "autocomplete is counted");
 
+    // the step's code can be read beside the reflection
+    await page.click("[data-peek-open]");
+    assert.ok(await page.$eval("#peek", (p) => !p.hidden), "the code panel opens");
+    assert.ok((await page.$eval("#peek-code", (c) => c.textContent)).includes("export async function retry"), "it shows the step's first file");
+    await page.click('[data-peek="1"]');
+    assert.ok((await page.$eval("#peek-code", (c) => c.textContent)).includes("baseDelayMs"), "its tabs switch files");
+    await page.click("[data-peek-close]");
     await page.type("#reflect", "Retry calls the work function, and when it throws it waits a growing delay before calling it again, up to the configured number of tries.");
     await page.click("#submit");
     await t.waitEvent("LBL reflection 01-retry-helper");
@@ -193,8 +200,15 @@ async function e2eType() {
     await page.waitForSelector("#reflect");
     await page.type("#reflect", "Wrapping the whole request means a bad status code is retried too, not just a network error from fetch. The old constant was dead code.");
     await page.click("#submit");
-    await t.waitEvent("LBL complete");
-    for (const id of ["02-use-it"]) writeFileSync(join(t.sessionDir, "grades", "steps", `${id}.json`), JSON.stringify({ verdict: "partial", score: 70, feedback: "Close." }));
+    await t.waitEvent("LBL reflection 02-use-it");
+    // a failing reflection keeps the finished weave locked until a rewrite passes
+    const grade = (verdict) => writeFileSync(join(t.sessionDir, "grades", "steps", "02-use-it.json"), JSON.stringify({ verdict, score: 70, feedback: "Close." }));
+    grade("retry");
+    await page.waitForSelector(".verdict.retry", { timeout: 8000 });
+    assert.equal(await page.$('[data-act="final"]'), null, "no finished weave after a failing grade");
+    assert.ok(!t.events.includes("LBL complete"), "the session stays open");
+    grade("partial");
+    await t.waitEvent("LBL complete", 8000);
     await page.waitForSelector('[data-act="final"]', { timeout: 8000 });
     await page.click('[data-act="final"]');
     await page.waitForSelector(".done-wrap.final");

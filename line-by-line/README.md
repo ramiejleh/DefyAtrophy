@@ -47,8 +47,9 @@ https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
      project's checks against your code and reviews it, with inline comments. You can ask for a hint;
      after three graded attempts that didn't pass, you can reveal Claude's version of a part.
    - **Review mode** steps through every added and removed line with Tab, Enter or the arrow keys.
-4. **After each step** (type mode), you explain what you built in your own words, and Claude grades it,
-   usually in under a minute.
+4. **After each step** (type mode), you explain what you built in your own words, with the step's code
+   open beside you if you like, and Claude grades it, usually in under a minute. The session only
+   finishes once every reflection passes; if one needs another go, rewrite it.
 
 | Type | Learn | Review |
 |---|---|---|

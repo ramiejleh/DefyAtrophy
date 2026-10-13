@@ -31,7 +31,9 @@ that leads to it.
 
 Feedback is 2–5 sentences of markdown. Start with what they got right, specifically. Then the gap, as
 a question or a pointer to the line that shows it ("Look at line 12 of `retry.ts`: what happens on the
-last attempt?"). If they rewrite a reflection, a new `LBL reflection` arrives. Grade it fresh.
+last attempt?"). If they rewrite a reflection, a new `LBL reflection` arrives. Grade it fresh. A
+`retry` keeps the session from finishing until a rewrite earns `pass` or `partial`, so save it for real
+gaps in understanding.
 
 ## File submissions (learn mode): `LBL submit <stepId> <path> <n>`
 

@@ -33,7 +33,8 @@ https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
    In type mode, a step unlocks once you've written the previous step's reflection; in learn mode, once
    the previous step's files are done. Review mode never locks steps.
 2. **Where the files live.** Opening a step shows its files inside their real folders, numbered in a
-   suggested order, with arrows for who imports whom and a few existing files for context. Open any
+   suggested order, with who imports whom written on each card (hover one to see its arrows) and a few
+   existing files for context. Open any
    file in any order. Finished files reopen read-only.
 3. **The file.**
    - **Type mode** shows the whole file. Existing lines are dimmed, removed lines are struck through,

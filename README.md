@@ -145,7 +145,8 @@ file is written into your project as you finish it.
 ```
 
 - **Map → step → file.** In type and learn mode, steps unlock in order. Each step shows its files inside their real folders,
-  numbered in a suggested order, with arrows for who imports whom. Open files in any order; reopen
+  numbered in a suggested order, with who imports whom on each card (hover one for its arrows). Open
+  files in any order; reopen
   finished ones to read them.
 
   ![A step: the files drawn inside their real folders, numbered in a suggested order, with import arrows](line-by-line/docs/step-diagram.jpg)

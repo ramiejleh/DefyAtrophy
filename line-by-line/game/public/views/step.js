@@ -9,6 +9,8 @@ import { spool } from "./map.js";
 
 let resizeObserver;
 let shownStepId = null;
+/** The card whose arrows are drawn: the one hovered or focused. */
+let linkedPath = null;
 
 const STATUS = {
   todo: ["", "Not started"],
@@ -35,6 +37,7 @@ export function render({ stepId }) {
   const tree = buildTree([...files.map((f) => ({ ...f, kind: "file" })), ...context.map((c) => ({ ...c, kind: "context" }))]);
   const next = nextSuggested(step);
   const removedFiles = files.filter((f) => f.action === "delete");
+  const links = linksByPath(step);
 
   const app = document.getElementById("app");
   app.innerHTML = `
@@ -59,9 +62,8 @@ export function render({ stepId }) {
               </div>
             </div>
             <div class="diagram" id="diagram">
-              <svg class="edges" aria-hidden="true"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker></defs></svg>
-              ${folderHtml({ ...tree, name: projectName() }, true)}
-              <div class="edge-labels" aria-hidden="true"></div>
+              <svg class="edges" aria-hidden="true"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker></defs></svg>
+              ${folderHtml({ ...tree, name: projectName() }, links, true)}
             </div>
             <p class="diagram-hint">${next ? `Suggested next: <b>${next.order}. ${esc(fileName(next.path))}</b>. Any file can be opened in any order.` : "Every file in this step is done. Open any of them to read it again."}</p>
           </section>
@@ -114,9 +116,20 @@ export function render({ stepId }) {
   );
 
   const diagram = document.getElementById("diagram");
+  const link = (path) => {
+    if (path === linkedPath) return;
+    linkedPath = path;
+    drawEdges(step);
+  };
+  // away from the cards, the keyboard-focused card keeps its arrows
+  const focused = () => (diagram.contains(document.activeElement) ? (document.activeElement.dataset.node ?? null) : null);
+  linkedPath = null;
+  diagram.addEventListener("pointerover", (e) => link(e.target.closest(".card")?.dataset.node ?? focused()));
+  diagram.addEventListener("pointerleave", () => link(focused()));
+  diagram.addEventListener("focusin", (e) => link(e.target.closest(".card")?.dataset.node ?? null));
+  diagram.addEventListener("focusout", () => link(null));
   resizeObserver = new ResizeObserver(() => drawEdges(step));
   resizeObserver.observe(diagram);
-  requestAnimationFrame(() => drawEdges(step));
   (app.querySelector(`.card[data-open="${CSS.escape(next?.path ?? "")}"]`) ?? app.querySelector("[data-back]")).focus({ preventScroll: true });
 }
 
@@ -144,20 +157,39 @@ function alsoHtml(step, removedFiles) {
     </ul>`;
 }
 
-function folderHtml(node, root = false) {
-  const files = node.files.map(cardHtml).join("");
-  const dirs = node.dirs.map((d) => folderHtml(d)).join("");
+/** Each file's relationships, both ways, so every card can list them as text. */
+function linksByPath(step) {
+  const links = {};
+  for (const { from, to, label } of step.diagram?.edges ?? []) {
+    if (from === to) continue;
+    (links[from] ??= []).push({ dir: "→", path: to, label });
+    (links[to] ??= []).push({ dir: "←", path: from, label });
+  }
+  return links;
+}
+
+function folderHtml(node, links, root = false) {
+  const files = node.files.map((f) => cardHtml(f, links[f.path] ?? [])).join("");
+  const dirs = node.dirs.map((d) => folderHtml(d, links)).join("");
   return `
     <div class="folder ${root ? "root" : ""}">
       <div class="folder-label"><span aria-hidden="true">▸</span> ${esc(node.name)}/</div>
-      <div class="folder-body">${files}${dirs}</div>
+      ${files ? `<div class="folder-files">${files}</div>` : ""}
+      ${dirs ? `<div class="folder-dirs">${dirs}</div>` : ""}
     </div>`;
 }
 
-function cardHtml(entry) {
+function linksHtml(links) {
+  if (!links.length) return "";
+  return `<span class="card-links">${links
+    .map((l) => `<span class="card-link" title="${esc(l.path)}"><b>${l.dir}</b> <code>${esc(fileName(l.path))}</code>${l.label ? ` ${esc(l.label)}` : ""}</span>`)
+    .join("")}</span>`;
+}
+
+function cardHtml(entry, links) {
   if (entry.kind === "context") {
     return `<div class="card context" data-node="${esc(entry.path)}" title="${esc(entry.path)}">
-      <span class="card-name">${esc(entry.name)}</span><span class="card-role">${esc(entry.note ?? "")}</span></div>`;
+      <span class="card-name">${esc(entry.name)}</span><span class="card-role">${esc(entry.note ?? "")}</span>${linksHtml(links)}</div>`;
   }
   const st = fileStatus(entry);
   const [actionCls, actionText] = ACTION[entry.action];
@@ -171,19 +203,25 @@ function cardHtml(entry) {
       <span class="order-dot">${entry.order}</span>
       <span class="card-top"><span class="card-name">${esc(entry.name)}</span>${actionText ? `<span class="badge ${actionCls}">${actionText}</span>` : ""}</span>
       <span class="card-role">${esc(entry.role ?? "")}</span>
+      ${linksHtml(links)}
       <span class="card-meta"><span>${STATUS[st][0] ? `${STATUS[st][0]} ` : ""}${STATUS[st][1]}</span><span>${size} ${unit}</span></span>
       <span class="card-bar"><i style="width:${pct}%"></i></span>
     </button>`;
 }
 
-/** Arrows between cards, clipped to the card edges, redrawn whenever the layout changes. */
+/**
+ * Arrows between the linked card and the cards it relates to, clipped to the card edges. Only one card's
+ * arrows show at a time (the labels are written on the cards), redrawn whenever the layout changes.
+ */
 function drawEdges(step) {
   const diagram = document.getElementById("diagram");
   const svg = diagram?.querySelector("svg.edges");
   if (!svg) return;
   svg.querySelectorAll("g.edge").forEach((g) => g.remove());
-  const labels = diagram.querySelector(".edge-labels");
-  labels.innerHTML = "";
+  const edges = (step.diagram?.edges ?? []).filter((e) => linkedPath && (e.from === linkedPath || e.to === linkedPath));
+  const related = new Set(edges.flatMap((e) => [e.from, e.to]));
+  diagram.classList.toggle("linking", related.size > 0);
+  diagram.querySelectorAll(".card").forEach((el) => el.classList.toggle("linked", related.has(el.dataset.node)));
   const box = diagram.getBoundingClientRect();
   svg.setAttribute("width", diagram.scrollWidth);
   svg.setAttribute("height", diagram.scrollHeight);
@@ -201,7 +239,7 @@ function drawEdges(step) {
     const scale = 1 / Math.max(Math.abs(dx) / (r.w / 2 + 4), Math.abs(dy) / (r.h / 2 + 4), 1e-6);
     return [cx + dx * scale, cy + dy * scale];
   };
-  for (const edge of step.diagram?.edges ?? []) {
+  for (const edge of edges) {
     const a = rectOf(edge.from);
     const b = rectOf(edge.to);
     if (!a || !b || edge.from === edge.to) continue;
@@ -210,7 +248,8 @@ function drawEdges(step) {
     const mx = (x1 + x2) / 2;
     const my = (y1 + y2) / 2;
     const len = Math.hypot(x2 - x1, y2 - y1) || 1;
-    const bend = Math.min(40, len * 0.18);
+    // short hops between neighbouring cards stay straight, so the head points where the line goes
+    const bend = len < 80 ? 0 : Math.min(40, len * 0.18);
     const qx = mx - ((y2 - y1) / len) * bend;
     const qy = my + ((x2 - x1) / len) * bend;
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -219,16 +258,6 @@ function drawEdges(step) {
     p.setAttribute("d", `M ${x1} ${y1} Q ${qx} ${qy} ${x2} ${y2}`);
     p.setAttribute("marker-end", "url(#arrow)");
     g.append(p);
-    if (edge.label) {
-      const t = document.createElement("span");
-      t.className = "edge-label";
-      // a third of the way along the curve, in the gap next to the source card
-      const at = 0.3;
-      t.style.left = `${(1 - at) ** 2 * x1 + 2 * (1 - at) * at * qx + at ** 2 * x2}px`;
-      t.style.top = `${(1 - at) ** 2 * y1 + 2 * (1 - at) * at * qy + at ** 2 * y2}px`;
-      t.textContent = edge.label;
-      labels.append(t);
-    }
     svg.append(g);
   }
 }

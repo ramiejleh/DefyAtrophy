@@ -104,7 +104,11 @@ async function e2eType() {
     const orders = await page.$$eval("button.card .order-dot", (els) => els.map((e) => e.textContent));
     assert.deepEqual(orders.sort(), ["1", "2"], "numbered cards");
     assert.equal(await page.$$eval(".card.context", (e) => e.length), 1, "context card");
-    assert.ok((await page.$$eval("svg.edges g.edge", (e) => e.length)) >= 2, "import arrows drawn");
+    const links = await page.$eval('.card[data-node="src/retry.ts"] .card-links', (e) => e.textContent);
+    assert.ok(links.includes("config.ts") && links.includes("client.ts"), "a card lists what it imports and what imports it");
+    await page.hover('.card[data-node="src/retry.ts"]');
+    await sleep(100);
+    assert.equal(await page.$$eval("svg.edges g.edge", (e) => e.length), 2, "hovering a card draws its import arrows");
     const folders = await page.$$eval(".folder-label", (els) => els.map((e) => e.textContent.trim()));
     assert.ok(folders.some((f) => f.includes("src/")) && folders.some((f) => f.includes("http/")), "files sit in their real folders");
 

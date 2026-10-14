@@ -149,18 +149,18 @@ export function createGameServer({ sessionDir, projectDir, token = randomBytes(1
   };
 
   function isComplete() {
+    // type and review mode: every reflection is in and graded, and none of them needs another go
+    const reflectionsPass = () =>
+      session.steps.every((s) => existsSync(at("reflections", `${s.id}.md`)) && ["pass", "partial"].includes(readJson(at("grades", "steps", `${s.id}.json`), null)?.verdict));
     if (session.mode === "review") {
-      // Review progress lives in the browser; it's complete once every file has been stepped through.
+      // Review progress lives in the browser: every file has been stepped through.
       const files = readJson(at("progress.json"), {}).files ?? {};
-      return allFiles(session).every(({ file }) => files[file.path]?.done);
+      return allFiles(session).every(({ file }) => files[file.path]?.done) && reflectionsPass();
     }
     const done = applied();
     if (!allFiles(session).every(({ file }) => file.path in done)) return false;
     if (!session.steps.every((s) => (s.autoApplied ?? []).every((a) => a.path in done))) return false;
-    // type mode: every reflection is in and graded, and none of them needs another go
-    if (session.mode === "type")
-      return session.steps.every((s) => existsSync(at("reflections", `${s.id}.md`)) && ["pass", "partial"].includes(readJson(at("grades", "steps", `${s.id}.json`), null)?.verdict));
-    return true;
+    return session.mode === "type" ? reflectionsPass() : true;
   }
   function maybeComplete() {
     if (existsSync(at("complete")) || !isComplete()) return;
@@ -274,7 +274,7 @@ export function createGameServer({ sessionDir, projectDir, token = randomBytes(1
     },
 
     "POST /api/reflection": ({ stepId, text, stats }) => {
-      requireMode("type");
+      requireMode("type", "review");
       const step = requireStep(stepId);
       if (typeof text !== "string" || text.trim().length < MIN_REFLECTION) throw new HttpError(400, "Reflection is too short");
       mkdirSync(at("reflections"), { recursive: true });

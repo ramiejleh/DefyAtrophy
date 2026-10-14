@@ -12,6 +12,8 @@ export const mode = () => store.session.mode;
 
 /** Review mode over existing code (a walkthrough) rather than a branch's changes. */
 export const walkthrough = () => store.session.subject === "code";
+/** Type and review mode end each step with a reflection that Claude grades; learn mode grades the files instead. */
+export const reflects = () => mode() !== "learn";
 
 export async function load() {
   const [session, state] = await Promise.all([api.get("/api/session"), api.get("/api/state")]);
@@ -90,7 +92,6 @@ export function stepStatus(step) {
   const i = store.session.steps.indexOf(step);
   const prev = store.session.steps[i - 1];
   const started = step.files.some((f) => fileStatus(f) !== "todo");
-  if (mode() === "review") return stepFilesDone(step) ? "done" : started ? "progress" : "available";
   if (mode() === "learn") {
     if (prev && !stepFilesDone(prev)) return "locked";
     return stepFilesDone(step) ? "done" : started ? "progress" : "available";
@@ -132,7 +133,6 @@ export function computeStats(s) {
 }
 
 export function sessionDone() {
-  if (mode() === "review") return store.session.steps.every(stepFilesDone);
   return store.state.complete;
 }
 

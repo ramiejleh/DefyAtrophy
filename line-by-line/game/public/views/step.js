@@ -2,7 +2,7 @@
 
 import { go } from "../app.js";
 import { burst, confetti, sfx } from "../fx.js";
-import { fileSize, fileStatus, mode, nextSuggested, saveProgress, stepFilesDone, stepNumber, stepPercent, stepStatus, store, walkthrough } from "../store.js";
+import { fileSize, fileStatus, mode, nextSuggested, reflects, saveProgress, stepFilesDone, stepNumber, stepPercent, stepStatus, store, walkthrough } from "../store.js";
 import { buildTree } from "../tree.js";
 import { api, esc, fileName, md, mdInline, toast } from "../util.js";
 import { spool } from "./map.js";
@@ -92,11 +92,11 @@ export function render({ stepId }) {
                 .join("")}</ol>
             </section>
             ${
-              stepFilesDone(step) && mode() !== "review"
-                ? `<button class="btn" data-summary>${mode() === "type" && !store.state.reflections[step.id] ? "Write your reflection →" : "Step summary →"}</button>`
-                : stepFilesDone(step)
-                  ? `<button class="btn" data-summary>Step ${walkthrough() ? "read" : "reviewed"}. Continue →</button>`
-                  : ""
+              !stepFilesDone(step)
+                ? ""
+                : reflects() && !store.state.reflections[step.id]
+                  ? `<button class="btn" data-summary>Write your reflection →</button>`
+                  : `<button class="btn" data-summary>${mode() === "review" ? `Step ${walkthrough() ? "read" : "reviewed"}. Continue →` : "Step summary →"}</button>`
             }
           </aside>
         </div>

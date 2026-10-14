@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { after, test } from "node:test";
 import { author, makeRepo, sh, writeFiles } from "./helpers.js";
@@ -106,14 +106,21 @@ test("walkthrough: review mode over existing code, with line ranges", async () =
   assert.equal(assembled.subject, "code");
   assert.deepEqual(assembled.steps[0].files.map((f) => f.action), ["read", "read"]);
 
-  // stepping through every file completes the session, so Claude knows to clean up
+  // stepping through every file and passing every reflection completes the session, so Claude knows to clean up
   const srv = await startServer(session, project);
   try {
+    const stepId = assembled.steps[0].id;
     const files = Object.fromEntries(assembled.steps[0].files.map((f) => [f.path, { cursor: 0, done: false }]));
     await srv.call("PUT", "/api/progress", { files });
     assert.ok(!srv.events.includes("LBL complete"));
     for (const f of Object.values(files)) f.done = true;
     await srv.call("PUT", "/api/progress", { files });
+    assert.ok(!srv.events.includes("LBL complete"), "not before the step's reflection");
+    assert.equal((await srv.call("POST", "/api/reflection", { stepId, text: "Login reads the user, then token.js signs a token for them." })).status, 200);
+    assert.match(run(project, "status", session).out, new RegExp(`grade the reflection for ${stepId}`));
+    mkdirSync(join(session, "grades", "steps"), { recursive: true });
+    writeFileSync(join(session, "grades", "steps", `${stepId}.json`), JSON.stringify({ verdict: "pass", score: 90, feedback: "Yes." }));
+    await srv.call("GET", "/api/state");
     assert.ok(srv.events.includes("LBL complete"));
     assert.equal((await srv.call("POST", "/api/file", { path: "src/auth/token.js" })).status, 403, "walkthroughs never write");
   } finally {

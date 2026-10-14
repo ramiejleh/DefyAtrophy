@@ -162,11 +162,13 @@ test("review mode: built from git, never writes", async () => {
     for (const [route, body] of [
       ["/api/file", { path: "src/b.ts" }],
       ["/api/step-done", { stepId: session.steps[0].id }],
-      ["/api/reflection", { stepId: session.steps[0].id, text: "x".repeat(200) }],
       ["/api/submit", { path: "src/b.ts", holes: {} }],
     ]) {
       assert.equal((await srv.call("POST", route, body)).status, 403, route);
     }
+    // ...but each step still ends with a reflection for Claude to grade
+    assert.equal((await srv.call("POST", "/api/reflection", { stepId: session.steps[0].id, text: "x".repeat(50) })).status, 200);
+    assert.ok(srv.events.includes(`LBL reflection ${session.steps[0].id}`));
   } finally {
     await srv.close();
   }

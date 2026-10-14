@@ -13,7 +13,7 @@ files by hand, run `line-by-line assemble "<session>"`, and fix errors until it 
 | `steps.json` | all | steps, file order and roles, diagram |
 | `notes.txt` | type, review | one note per line, keyed `path:N` |
 | `holes.txt` | learn | which line ranges the user writes, with a spec for each |
-| `private/rubric.json` | type, learn | grading notes; the browser never sees it |
+| `private/rubric.json` | all | grading notes; the browser never sees it |
 
 Don't edit `draft.json` or `session.json`. They're generated, and `assemble` rewrites `session.json`.
 
@@ -44,7 +44,7 @@ The template has every changed file in one step. Split it.
       "concepts": ["Exponential backoff", "Generics"],
       "setup": [],                                // type/learn: things to do first (env vars, installs)
       "tryIt": [{ "cmd": "npm test", "expect": "The retry tests pass" }],   // type/learn; "(…)" = an instruction, not a command
-      "reflectionPrompt": "Explain how …",        // type mode only
+      "reflectionPrompt": "Explain how …",        // type/review: what the user explains after the step
       "files": [
         { "path": "src/retry.ts", "order": 1, "role": "Runs async work again with growing waits", "intro": "…" }
       ],
@@ -139,13 +139,20 @@ and try again, up to `tries` times. Rethrow the last error once out of tries.
   pure wiring.
 - **≤40 holes per session.**
 
-## 4. Rubric (`private/rubric.json`, type and learn)
+### Reflection prompts (type and review)
+
+Every type and review step ends with the user explaining it in their own words, and you grade it. Ask
+about the step's idea, not its syntax: how the pieces fit, and why. In review mode the user read the
+code rather than wrote it, so ask what it does and why it's built that way ("How does a failed request
+end up being tried again?"), never for an opinion of the change.
+
+## 4. Rubric (`private/rubric.json`)
 
 Create `<session>/private/` if it doesn't exist. The server never serves anything in it.
 
 ```jsonc
 {
-  "steps": {                                      // type mode: grading reflections
+  "steps": {                                      // type/review: grading reflections
     "01-retry-helper": {
       "keyPoints": ["work is retried only when it throws", "the wait doubles each time", "the last error is rethrown"],
       "misconceptions": ["thinks it retries on success", "confuses tries with waits"]
@@ -166,7 +173,8 @@ Create `<session>/private/` if it doesn't exist. The server never serves anythin
 - Every changed file is in exactly one step, and the step order respects dependencies.
 - Diagram edges are real and point from dependent to dependency.
 - Type/review: every line in `notes-todo.txt` has a note. Learn: every hole has a spec.
-- Type/learn: the rubric is written.
+- Type/review: every step has a `reflectionPrompt`.
+- The rubric is written.
 
 Then `line-by-line assemble "<session>"`. Errors name the file and line. Fix them and run it again.
 `VALID` means every file rebuilds byte for byte into the solution, so what the user produces is exactly

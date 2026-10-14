@@ -225,8 +225,27 @@ async function e2eReview() {
   const { page } = t;
   try {
     await t.shot("1-map");
-    assert.equal(await page.$$eval(".node:disabled", (n) => n.length), 0, "review steps are never locked");
-    await openStep(page, 2);
+    assert.equal(await page.$$eval(".node:disabled", (n) => n.length), 1, "step 2 waits for step 1's reflection");
+    await openStep(page, 1);
+    for (const path of ["src/retry.ts", "src/config.ts"]) {
+      await openCard(page, path);
+      const n = rows(t.fileOf(path)).filter((r) => (r.kind === "typed" || r.kind === "removed") && r.text).length;
+      for (let i = 0; i <= n; i++) await page.keyboard.press("Enter");
+      await sleep(1200);
+    }
+    // review steps end with a graded reflection too, with the code at hand
+    await page.waitForSelector("#reflect");
+    await page.click("[data-peek-open]");
+    assert.ok((await page.$eval("#peek-code", (c) => c.textContent)).includes("export async function retry"), "the code panel shows the step's code");
+    await page.click("[data-peek-close]");
+    assert.ok(await page.$eval('[data-act="next"]', (b) => b.disabled), "the next step waits for the reflection");
+    await page.type("#reflect", "Retry runs the work again after a growing wait, and config holds how many tries and the base delay.");
+    await page.$eval("#submit", (b) => b.click()); // the stepping toasts may still cover it
+    await t.waitEvent("LBL reflection 01-retry-helper");
+    await page.waitForSelector('[data-act="next"]:not([disabled])');
+    await page.click('[data-act="next"]');
+    await page.waitForSelector(".diagram .card");
+    await sleep(300);
     await t.shot("2-step");
     await openCard(page, "src/http/client.ts");
     const stops = rows(t.fileOf("src/http/client.ts")).filter((r) => (r.kind === "typed" || r.kind === "removed") && r.text).length;
@@ -248,8 +267,7 @@ async function e2eReview() {
       for (let i = 0; i <= n; i++) await page.keyboard.press("Enter");
       await sleep(1200);
     }
-    await page.waitForSelector(".done-wrap");
-    assert.equal(await page.$("#reflect"), null, "no reflection in review mode");
+    await page.waitForSelector("#reflect");
     await t.shot("4-step-reviewed");
     for (const [path, content] of Object.entries(AFTER)) assert.equal(t.disk(path), content, `review never writes (${path})`);
     assert.ok(!t.events.some((e) => e.startsWith("LBL file")), "no file events");
@@ -344,8 +362,15 @@ async function e2eWalkthrough() {
       for (let i = 0; i < n; i++) await page.keyboard.press("Tab");
       await sleep(1200);
     }
-    await t.waitEvent("LBL complete");
-    await page.waitForSelector(".done-wrap");
+    await page.waitForSelector("#reflect");
+    await page.type("#reflect", "getJson hands the fetch to retry, which calls it again after a growing wait whenever it throws.");
+    await page.$eval("#submit", (b) => b.click());
+    await t.waitEvent("LBL reflection 01-request");
+    assert.ok(!t.events.includes("LBL complete"), "not finished before the reflection passes");
+    mkdirSync(join(t.sessionDir, "grades", "steps"), { recursive: true });
+    writeFileSync(join(t.sessionDir, "grades", "steps", "01-request.json"), JSON.stringify({ verdict: "pass", score: 90, feedback: "Yes." }));
+    await t.waitEvent("LBL complete", 8000);
+    await page.waitForSelector('[data-act="final"]', { timeout: 8000 });
     for (const [path, content] of Object.entries(AFTER)) if (content) assert.equal(t.disk(path), content, `never writes (${path})`);
   } finally {
     await t.close();

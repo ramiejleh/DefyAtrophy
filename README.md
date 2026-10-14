@@ -51,12 +51,12 @@ Swap `line-by-line` for `interactive-pr-review` or `walkthrough` to install the 
 
 > Write the code yourself, line by line.
 
-https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
+https://github.com/user-attachments/assets/d4e8cf26-5655-4bc0-9653-9a677f6fb14c
 
 <details>
 <summary>Can't play the video here? An animated preview</summary>
 
-![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](docs/line-by-line-demo.gif)
+![line-by-line in action: the step diagram, typing a file with a note on every line, a graded reflection with the code beside it, a graded learn-mode attempt, and review mode stepping through changes](docs/line-by-line-demo.gif)
 
 </details>
 
@@ -99,7 +99,8 @@ graded by running **your project's checks against your code**, with inline comme
 
 Tab through your branch's changes in a logical order, or walk through any existing code:
 `/line-by-line:review the auth implementation` traces the flow and explains it line by line, in the
-order it runs. Read-only: nothing is written.
+order it runs. After each step you explain what you read, and Claude grades it. Read-only: nothing is
+written.
 
 </td>
 <td width="50%"><img src="line-by-line/docs/review-mode.jpg" alt="Review mode: stepping through added and removed lines with a note on each"></td>
@@ -144,12 +145,17 @@ file is written into your project as you finish it.
            line-by-line finish ──▶ worktree, session data and git exclude entry removed
 ```
 
-- **Map → step → file.** In type and learn mode, steps unlock in order. Each step shows its files inside their real folders,
+- **Map → step → file.** Steps unlock in order. Each step shows its files inside their real folders,
   numbered in a suggested order, with who imports whom on each card (hover one for its arrows). Open
-  files in any order; reopen
-  finished ones to read them.
+  files in any order; reopen finished ones to read them.
 
-  ![A step: the files drawn inside their real folders, numbered in a suggested order, with import arrows](line-by-line/docs/step-diagram.jpg)
+  ![A step: the files drawn inside their real folders, numbered in a suggested order, each card listing its imports](line-by-line/docs/step-diagram.jpg)
+
+- **Explain it back.** After each step in type and review mode, you explain what you built or read in
+  your own words, with the step's code open beside you, and Claude grades it. The session only finishes
+  once every reflection passes.
+
+  ![The step summary: a graded reflection, with the step's code open beside it](line-by-line/docs/reflection.jpg)
 
 - **Safe by default.** The game server listens on `127.0.0.1` only, its data requests need the token in
   the URL Claude gives you, it refuses other sites (CSRF and DNS rebinding), and it only writes the

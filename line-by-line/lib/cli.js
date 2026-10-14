@@ -199,7 +199,7 @@ function cmdBuild(argv) {
     "  1. Fill in steps.json (titles, goals, file order and roles, diagram context and edges)",
     mode === "learn"
       ? "  2. Write holes.txt (see holes-todo.txt for the changed regions), and private/rubric.json"
-      : `  2. Write notes.txt with a note for every line in notes-todo.txt${mode === "type" ? ", and private/rubric.json" : ""}`,
+      : "  2. Write notes.txt with a note for every line in notes-todo.txt, and private/rubric.json",
     `  3. line-by-line assemble ${outDir}`,
   );
 }
@@ -327,7 +327,7 @@ export function status(sessionDir) {
         if (n && !grades.some((g) => g.attempt === n)) pending.push(`grade submission ${n} of ${file.path} (line-by-line check ${sessionDir} ${file.path})`);
       }
     }
-    if (session.mode === "type") {
+    if (session.mode !== "learn") {
       const reflection = at("reflections", `${step.id}.md`);
       const grade = at("grades", "steps", `${step.id}.json`);
       if (existsSync(reflection) && (!existsSync(grade) || statSync(grade).mtimeMs < statSync(reflection).mtimeMs)) {

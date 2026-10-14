@@ -7,7 +7,8 @@ argument-hint: "[base ref | what to walk through, e.g. \"the auth implementation
 
 The user wants to read code carefully, one line at a time, in an order that makes sense. You choose
 the order and write a note for every line. The game lets them step through with Tab or the arrow
-keys. It never writes to the project, and nothing goes anywhere else.
+keys, and after each step they explain it in their own words and you grade it, so they know they
+understood it. It never writes to the project, and nothing goes anywhere else.
 
 Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line"`. Always call it by that full path.
 
@@ -62,11 +63,17 @@ verdict, a critique or suggested changes.
    ```
    lbl serve --session "<session>" > "<session>/server.log" 2>&1
    ```
-   Give the user the `LBL ready <url>` URL from the log and tell them in two lines:
+   Give the user the `LBL ready <url>` URL from the log and tell them in three lines:
    - each step shows where its files live, with a suggested order;
-   - in a file, Tab, Enter or ↓ moves to the next line, and Shift+Tab or ↑ goes back.
+   - in a file, Tab, Enter or ↓ moves to the next line, and Shift+Tab or ↑ goes back;
+   - after each step they explain it in their own words and you grade it; the next step unlocks once
+     it's submitted.
 3. Start a **Monitor** (`tail -n 0 -F "<session>/server.log" | grep --line-buffered '^LBL '`, longest
-   timeout, re-arm on expiry). On `LBL complete` (every file stepped through), or when the user says
-   they're done, or on `/line-by-line:cleanup`: wait ~10 seconds so the final screen shows, then run
-   `lbl finish "<session>"`. It stops the server and removes every trace of the session. Nothing is left
-   in the project.
+   timeout, re-arm on expiry).
+   - `LBL reflection <stepId>`: load the **`grading`** skill and grade the reflection right away.
+   - `LBL complete` (every file stepped through and every reflection graded `pass` or `partial`), or the
+     user says they're done, or `/line-by-line:cleanup`: wait ~10 seconds so the final screen shows,
+     then run `lbl finish "<session>"`. It stops the server and removes every trace of the session.
+     Nothing is left in the project.
+
+   If anything is pending when you start (for example after a restart), `lbl status "<session>"` lists it.

@@ -4,7 +4,7 @@ import { go } from "../app.js";
 import { burst, confetti, sfx } from "../fx.js";
 import { highlightLines, spans } from "../highlight.js";
 import { swatch } from "../loom.js";
-import { computeStats, fileSize, mode, refresh, saveProgress, sessionDone, stepFilesDone, stepNumber, stepStats, store, walkthrough } from "../store.js";
+import { computeStats, fileSize, mode, reflects, refresh, saveProgress, sessionDone, stepFilesDone, stepNumber, stepStats, store, walkthrough } from "../store.js";
 import { api, esc, fileName, md, mdInline, rowsOf, toast } from "../util.js";
 import { stepColor } from "./map.js";
 
@@ -35,13 +35,13 @@ export function render(params) {
         <div class="tiles">${tiles(step)}</div>
         ${filesSection(step)}
         ${tryItSection(step)}
-        ${mode() === "type" ? `<section class="section glass" id="reflection"></section>` : ""}
+        ${reflects() ? `<section class="section glass" id="reflection"></section>` : ""}
         <div class="actions-row">
           <button class="btn ghost" data-act="map">All steps</button>
           <button class="btn ghost" data-act="step">Back to the files</button>
           ${
             next
-              ? `<button class="btn" data-act="next" ${mode() === "type" && !store.state.reflections[step.id] ? "disabled title='Submit your reflection first'" : ""}>Next: ${esc(next.title)} →</button>`
+              ? `<button class="btn" data-act="next" ${reflects() && !store.state.reflections[step.id] ? "disabled title='Submit your reflection first'" : ""}>Next: ${esc(next.title)} →</button>`
               : sessionDone()
                 ? `<button class="btn" data-act="final">See the finished weave →</button>`
                 : ""
@@ -49,9 +49,9 @@ export function render(params) {
         </div>
       </div>
     </div>
-    ${mode() === "type" ? peekHtml(step) : ""}`;
+    ${reflects() ? peekHtml(step) : ""}`;
 
-  if (mode() === "type") {
+  if (reflects()) {
     renderReflection(step);
     app.querySelector("[data-peek-close]").addEventListener("click", () => setPeek(false));
     app.querySelectorAll("[data-peek]").forEach((b) => b.addEventListener("click", () => showPeekFile(step, Number(b.dataset.peek))));
@@ -248,11 +248,14 @@ function renderReflectionForm(step, initial) {
     draft = localStorage.getItem(draftKey) ?? initial;
   } catch {}
   section.innerHTML = `
-    <h3>Explain what you built</h3>
-    <div class="feedback dim">${md(step.reflectionPrompt || "In your own words: what did you build in this step, and why is each piece needed?")}</div>
+    <h3>${mode() === "review" ? "Explain what you read" : "Explain what you built"}</h3>
+    <div class="feedback dim">${md(
+      step.reflectionPrompt ||
+        (mode() === "review" ? "In your own words: what does this step's code do, and why is each piece there?" : "In your own words: what did you build in this step, and why is each piece needed?"),
+    )}</div>
     <label class="sr-only" for="reflect">Your reflection</label>
     <button class="btn ghost small peek-open" data-peek-open>${peek.open ? "Hide the code" : "Show this step's code"}</button>
-    <textarea class="reflect" id="reflect" placeholder="In this step I built…">${esc(draft)}</textarea>
+    <textarea class="reflect" id="reflect" placeholder="${mode() === "review" ? "This step…" : "In this step I built…"}">${esc(draft)}</textarea>
     <div class="reflect-foot"><span id="count"></span><button class="btn" id="submit">Submit for grading</button></div>`;
   section.querySelector("[data-peek-open]").addEventListener("click", () => setPeek(!peek.open));
   const area = section.querySelector("#reflect");
@@ -273,14 +276,17 @@ function renderReflectionForm(step, initial) {
     try {
       const s = stepStats(step);
       const { wpm, accuracy } = computeStats(s);
-      await api.post("/api/reflection", { stepId: step.id, text: area.value, stats: { wpm, accuracy, lines: s.lines, assisted: s.assisted ?? 0 } });
+      const stats = mode() === "type" ? { wpm, accuracy, lines: s.lines, assisted: s.assisted ?? 0 } : undefined;
+      await api.post("/api/reflection", { stepId: step.id, text: area.value, stats });
       try {
         localStorage.removeItem(draftKey);
       } catch {}
       await refresh();
-      store.progress.xp += 50;
-      saveProgress();
-      toast("Reflection saved · +50 XP. The next step is unlocked.", "✓");
+      if (mode() === "type") {
+        store.progress.xp += 50;
+        saveProgress();
+      }
+      toast(`Reflection saved${mode() === "type" ? " · +50 XP" : ""}. The next step is unlocked.`, "✓");
       burst(innerWidth / 2, innerHeight * 0.7, { count: 50, power: 1.5 });
       render({ stepId: step.id });
       document.getElementById("reflection")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -297,7 +303,7 @@ function renderFinal() {
   const bands = steps.map((s, i) => ({ color: stepColor(i), rows: Math.max(3, Math.min(10, s.files.length * 3)), filled: stepFilesDone(s) ? 99 : 0 }));
   const lines = steps.reduce((n, s) => n + s.files.reduce((m, f) => m + fileSize(f), 0), 0);
   const app = document.getElementById("app");
-  const waiting = mode() === "type" ? steps.filter((s) => store.state.reflections[s.id] && !store.state.stepGrades[s.id]).length : 0;
+  const waiting = reflects() ? steps.filter((s) => store.state.reflections[s.id] && !store.state.stepGrades[s.id]).length : 0;
   app.innerHTML = `
     <div class="screen">
       <div class="done-wrap final">

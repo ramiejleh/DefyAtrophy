@@ -128,7 +128,7 @@ export function build({ mode, from, to, projectDir, out, task = "", base = null 
           goal: "",
           concepts: [],
           ...(mode === "review" ? {} : { setup: [], tryIt: [] }),
-          ...(mode === "type" ? { reflectionPrompt: "" } : {}),
+          ...(mode === "learn" ? {} : { reflectionPrompt: "" }),
           files: files.map((f, i) => ({ path: f.path, order: i + 1, role: "", intro: "" })),
           autoApplied: autoApplied.map((a) => a.path),
           diagram: { context: [], edges: [] },

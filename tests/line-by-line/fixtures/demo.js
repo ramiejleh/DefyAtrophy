@@ -199,6 +199,7 @@ export function makeWalkthrough() {
           tagline: "getJson wraps fetch",
           goal: "Follow `getJson` from the call to the retry loop.",
           concepts: [],
+          reflectionPrompt: "How does a failed request end up being tried again?",
           files: [
             { path: "src/http/client.ts", order: 1, role: "Fetches JSON from the API", intro: "" },
             { path: "src/retry.ts", order: 2, role: "Runs async work again with growing waits", intro: "" },

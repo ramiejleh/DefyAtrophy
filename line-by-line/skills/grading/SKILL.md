@@ -1,6 +1,6 @@
 ---
 name: grading
-description: How to grade line-by-line work while the user plays. Covers reflections after each type-mode step, learn-mode file submissions (run the project's checks against the user's code, then review it), and learn-mode hint requests. Use on `LBL reflection`, `LBL submit` or `LBL hint` events from a running session, or for anything `line-by-line status` lists as waiting for Claude.
+description: How to grade line-by-line work while the user plays. Covers reflections after each type- or review-mode step, learn-mode file submissions (run the project's checks against the user's code, then review it), and learn-mode hint requests. Use on `LBL reflection`, `LBL submit` or `LBL hint` events from a running session, or for anything `line-by-line status` lists as waiting for Claude.
 ---
 
 # Grading line-by-line work
@@ -13,7 +13,7 @@ Your feedback should leave the user understanding more than before. Be honest, b
 their own words or code, and **never hand over the answer**. Point at the gap and ask the question
 that leads to it.
 
-## Reflections (type mode): `LBL reflection <stepId>`
+## Reflections (type and review mode): `LBL reflection <stepId>`
 
 1. Read `<session>/reflections/<stepId>.md`, the step in `<session>/session.json` (its goal, concepts,
    files and reflection prompt), and `<session>/private/rubric.json` → `steps.<stepId>`.
@@ -22,7 +22,8 @@ that leads to it.
    - **partial**: mostly right, but misses a key point or is vague where it matters.
    - **retry**: a misconception, or mostly restating the prompt or the code.
 
-   Judge understanding, not prose. Short and right beats long and vague.
+   Judge understanding, not prose. Short and right beats long and vague. In review mode the user read
+   the code instead of writing it: grade whether they understood what it does and why.
 3. Write `<session>/grades/steps/<stepId>.json` (create the folders):
 
 ```json

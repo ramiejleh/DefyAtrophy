@@ -8,34 +8,33 @@ project yourself, in a small browser game. It has three modes:
 |---|---|---|
 | `/line-by-line:type <task>` | type the solution, one line at a time, with a note explaining every line | solves and verifies it, writes the notes, grades a short reflection after each step |
 | `/line-by-line:learn <task>` | write the real logic yourself, inside Claude's architecture (files, types, signatures) | designs it, writes a reference, runs your project's checks against **your** code and grades each file |
-| `/line-by-line:review [base]` | step through your current branch's changes, line by line, in a logical order | orders the changes and explains every changed line. No typing, nothing written, nothing sent anywhere |
-| `/line-by-line:review <topic>` | walk through existing code, e.g. `the auth implementation`, line by line | traces the flow, picks the files and line ranges in execution order, explains every line |
+| `/line-by-line:review [base]` | step through your current branch's changes, line by line, in a logical order | orders the changes, explains every changed line and grades a short reflection after each step. No typing, nothing written, nothing sent anywhere |
+| `/line-by-line:review <topic>` | walk through existing code, e.g. `the auth implementation`, line by line | traces the flow, picks the files and line ranges in execution order, explains every line, grades a short reflection after each step |
 
 Files reach your project only through the game. In type and learn mode, a hook asks you before Claude
 writes into the project while a session is running. When a session ends, Claude removes every trace of
 it: the scratch worktree, the session data and the git exclude entry. Your project is left exactly as if
 the code had been written directly.
 
-https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
+https://github.com/user-attachments/assets/d4e8cf26-5655-4bc0-9653-9a677f6fb14c
 
 <details>
 <summary>Can't play the video here? An animated preview</summary>
 
-![line-by-line in action: typing a file with a note on every line, a graded learn-mode attempt, and review mode stepping through changes](https://raw.githubusercontent.com/ramiejleh/DefyAtrophy/main/docs/line-by-line-demo.gif)
+![line-by-line in action: the step diagram, typing a file with a note on every line, a graded reflection with the code beside it, a graded learn-mode attempt, and review mode stepping through changes](https://raw.githubusercontent.com/ramiejleh/DefyAtrophy/main/docs/line-by-line-demo.gif)
 
 </details>
 
-![A step: its files in their real folders, numbered in a suggested order, with import arrows](docs/step-diagram.jpg)
+![A step: its files in their real folders, numbered in a suggested order, each card listing what it imports and what imports it, with the hovered card's arrows drawn](docs/step-diagram.jpg)
 
 ## How it plays
 
 1. **Steps.** The task is split into a few steps that build on each other, drawn as spools on a thread.
-   In type mode, a step unlocks once you've written the previous step's reflection; in learn mode, once
-   the previous step's files are done. Review mode never locks steps.
+   In type and review mode, a step unlocks once you've written the previous step's reflection; in learn
+   mode, once the previous step's files are done.
 2. **Where the files live.** Opening a step shows its files inside their real folders, numbered in a
    suggested order, with who imports whom written on each card (hover one to see its arrows) and a few
-   existing files for context. Open any
-   file in any order. Finished files reopen read-only.
+   existing files for context. Open any file in any order. Finished files reopen read-only.
 3. **The file.**
    - **Type mode** shows the whole file. Existing lines are dimmed, removed lines are struck through,
      and the lines you type are marked. Scroll anywhere for context: keystrokes only ever go into the
@@ -47,9 +46,11 @@ https://github.com/user-attachments/assets/5b7ecf5d-ddd9-4d7b-8858-b775d0df3532
      project's checks against your code and reviews it, with inline comments. You can ask for a hint;
      after three graded attempts that didn't pass, you can reveal Claude's version of a part.
    - **Review mode** steps through every added and removed line with Tab, Enter or the arrow keys.
-4. **After each step** (type mode), you explain what you built in your own words, with the step's code
-   open beside you if you like, and Claude grades it, usually in under a minute. The session only
-   finishes once every reflection passes; if one needs another go, rewrite it.
+4. **After each step** (type and review mode), you explain what you built or read in your own words,
+   with the step's code open beside you if you like, and Claude grades it, usually in under a minute.
+   The session only finishes once every reflection passes; if one needs another go, rewrite it.
+
+   ![The step summary: a graded reflection, with the step's code open in a panel beside it](docs/reflection.jpg)
 
 | Type | Learn | Review |
 |---|---|---|

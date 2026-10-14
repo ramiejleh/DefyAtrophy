@@ -35,7 +35,7 @@ export function validate(dir) {
     stepIds.add(step.id);
     if (!step.title) errors.push(`step ${step.id} has no title`);
     if (!step.files?.length && !step.autoApplied?.length) errors.push(`step ${step.id} has no files`);
-    if (mode === "type" && !step.reflectionPrompt) warnings.push(`step ${step.id} has no reflectionPrompt`);
+    if (mode !== "learn" && !step.reflectionPrompt) warnings.push(`step ${step.id} has no reflectionPrompt`);
 
     const orders = new Set();
     for (const file of step.files ?? []) {
@@ -76,7 +76,7 @@ export function validate(dir) {
   if (mode === "learn" && existsSync(join(dir, "private")) && !existsSync(join(dir, "private", "rubric.json"))) {
     warnings.push("private/rubric.json is missing: grading will only have the specs to go on");
   }
-  if (mode === "type" && !existsSync(join(dir, "private", "rubric.json"))) {
+  if (mode !== "learn" && !existsSync(join(dir, "private", "rubric.json"))) {
     warnings.push("private/rubric.json is missing: grading will only have the reflection prompts to go on");
   }
   return { errors, warnings, stats: { steps: session.steps?.length ?? 0, files: seenPaths.size, typed, holes } };

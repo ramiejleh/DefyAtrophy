@@ -16,12 +16,12 @@ writes into the project while a session is running. When a session ends, Claude 
 it: the scratch worktree, the session data and the git exclude entry. Your project is left exactly as if
 the code had been written directly.
 
-https://github.com/user-attachments/assets/d4e8cf26-5655-4bc0-9653-9a677f6fb14c
+https://github.com/user-attachments/assets/6664ca3c-d2eb-4740-89e1-9f1e12f1f32c
 
 <details>
 <summary>Can't play the video here? An animated preview</summary>
 
-![line-by-line in action: the step diagram, typing a file with a note on every line, a graded reflection with the code beside it, a graded learn-mode attempt, and review mode stepping through changes](https://raw.githubusercontent.com/ramiejleh/DefyAtrophy/main/docs/line-by-line-demo.gif)
+![line-by-line in action: the step diagram, typing a file with a note on every line, a graded reflection with the code beside it, learn mode graded against the tests, and review mode stepping through changes](https://raw.githubusercontent.com/ramiejleh/DefyAtrophy/main/docs/line-by-line-demo.gif)
 
 </details>
 

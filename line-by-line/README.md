@@ -1,7 +1,7 @@
 # line-by-line
 
 **Write the code yourself, line by line.** Claude does the thinking out of sight: it solves the task in
-a scratch git worktree and checks it with your project's own tests. You then build it into your real
+a scratch copy of your project (a git worktree when there's git) and checks it with your project's own tests. You then build it into your real
 project yourself, in a small browser game. It has three modes:
 
 | Command | You… | Claude… |
@@ -13,7 +13,7 @@ project yourself, in a small browser game. It has three modes:
 
 Files reach your project only through the game. In type and learn mode, a hook asks you before Claude
 writes into the project while a session is running. When a session ends, Claude removes every trace of
-it: the scratch worktree, the session data and the git exclude entry. Your project is left exactly as if
+it: the scratch copy, the session data and the git exclude entry. Your project is left exactly as if
 the code had been written directly.
 
 https://github.com/user-attachments/assets/6664ca3c-d2eb-4740-89e1-9f1e12f1f32c
@@ -64,15 +64,16 @@ https://github.com/user-attachments/assets/6664ca3c-d2eb-4740-89e1-9f1e12f1f32c
 /reload-plugins
 ```
 
-You need **Node.js 20+** and a browser. Type and learn mode need a git repository (for the scratch
-worktree), or Claude copies the project instead. Review mode needs git.
+You need **Node.js 20+** and a browser. Git is optional. With git, Claude's scratch copy is a
+git worktree. Without it (or before the first commit), it's a plain copy of your files. Type mode, learn
+mode and walkthroughs (`/line-by-line:review <topic>`) work either way. Only reviewing a branch's changes needs git.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `/line-by-line:type <task>` | Solve in a worktree, then type it in the game |
-| `/line-by-line:learn <task>` | Solve and design in a worktree, then write it yourself, graded per file |
+| `/line-by-line:type <task>` | Solve in a scratch copy, then type it in the game |
+| `/line-by-line:learn <task>` | Solve and design in a scratch copy, then write it yourself, graded per file |
 | `/line-by-line:review [base]` | Step through the branch's commits since `base` (default: the default branch) |
 | `/line-by-line:review <topic>` | Walk through existing code on a topic, in the order it runs |
 | `/line-by-line:resume [slug]` | Restart the game and grading after a break or a new Claude session |
@@ -108,8 +109,9 @@ Nothing leaves your machine. The plugin makes no network requests of its own: no
 external services, and the game's fonts and editor are bundled.
 
 What it does run, all locally:
-- **git**: `git worktree` for Claude's scratch copy (type and learn mode), and `git diff`, `git show` and
-  `git merge-base` to read the changes (review mode).
+- **git**, if the project uses it: `git worktree` for Claude's scratch copy (type and learn mode), and `git diff`,
+  `git show` and `git merge-base` to read a branch's changes (review mode). Without git, the scratch copy is a
+  plain copy.
 - **Node.js**: the `cli/line-by-line` CLI, which builds, validates and checks sessions, and starts the game
   server.
 - **A game server** on `127.0.0.1` only, on a free port, for the browser game. Its data requests need the
@@ -122,7 +124,7 @@ What it does run, all locally:
 
 What it writes: session data under `.line-by-line/<slug>/` in your project (git-ignored through
 `.git/info/exclude`), the files you finish in the game, and nothing else. `line-by-line finish` removes the session
-data, the worktree and the exclude entry when a session ends.
+data, the scratch copy and the exclude entry when a session ends.
 
 See the [privacy policy](PRIVACY.md) for the full details, and the [terms of use](TERMS.md).
 
@@ -131,6 +133,7 @@ See the [privacy policy](PRIVACY.md) for the full details, and the [terms of use
 `cli/line-by-line` is a small CLI with no dependencies that Claude drives:
 
 ```
+line-by-line scratch   <session>                    Claude's scratch copy: a git worktree, or a plain copy without git
 line-by-line build     --mode type|learn|review …   diff the solution (or the branch) into a draft
                        --mode review --focus a.ts:10-40 …   or walk through existing code
 line-by-line assemble  <session>                    merge steps.json + notes.txt / holes.txt, validate
@@ -139,7 +142,7 @@ line-by-line serve     --session <dir>              start the game, print "LBL r
 line-by-line check     <session> <path>             learn mode: put the latest submission in check/ for testing
 line-by-line status    <session>                    progress and anything waiting for Claude
 line-by-line list
-line-by-line finish    <session>                    stop the server, remove the worktree and every trace of the session
+line-by-line finish    <session>                    stop the server, remove the scratch copy and every trace of the session
 ```
 
 Highlighting and the learn-mode editor use a vendored copy of [CodeMirror 5.65.18](https://codemirror.net/5/) under the MIT

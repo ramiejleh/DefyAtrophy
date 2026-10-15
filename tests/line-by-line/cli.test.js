@@ -1,15 +1,18 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import { author, makeRepo, makeSolution, sh, writeFiles } from "./helpers.js";
+import { author, makeRepo, makeSolution, sh, tmp, writeFiles } from "./helpers.js";
 
 const BIN = join(import.meta.dirname, "..", "..", "line-by-line", "cli", "line-by-line");
-const run = (cwd, ...args) => {
-  const r = spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8" });
+const runEnv = (env, cwd, ...args) => {
+  const r = spawnSync(process.execPath, [BIN, ...args], { cwd, encoding: "utf8", env });
   return { code: r.status, out: r.stdout + r.stderr };
 };
+const run = (cwd, ...args) => runEnv(process.env, cwd, ...args);
+// a PATH with nothing on it, so `git` can't be found
+const noGit = (cwd, ...args) => runEnv({ ...process.env, PATH: tmp("lbl-empty-path-") }, cwd, ...args);
 
 const FILES = {
   "app/main.py": "def main():\n    print('hi')\n",
@@ -107,4 +110,76 @@ test("CLI: learn mode check/status and reference tampering", () => {
   const bad = run(project, "validate", dir);
   assert.equal(bad.code, 1);
   assert.match(bad.out, /go\/tool\.go: rebuilding the file doesn't give the solution byte for byte/);
+});
+
+test("CLI: scratch + type session in a folder that isn't a git repository", () => {
+  const project = tmp("lbl-plain-");
+  writeFiles(project, { ...FILES, "node_modules/dep/index.js": "module.exports = 1;\n" });
+  const made = run(project, "scratch", ".line-by-line/plain");
+  assert.equal(made.code, 0, made.out);
+  assert.match(made.out, /SCRATCH copy/);
+  const worktree = join(project, ".line-by-line", "plain", "worktree");
+  assert.ok(!existsSync(join(worktree, ".line-by-line")), "the copy doesn't contain the session folder");
+  assert.ok(lstatSync(join(worktree, "node_modules")).isSymbolicLink(), "node_modules is linked, not copied");
+  assert.equal(readFileSync(join(worktree, "app", "main.py"), "utf8"), FILES["app/main.py"]);
+
+  writeFiles(worktree, { "app/helper.py": CHANGES["app/helper.py"] });
+  const built = run(project, "build", "--mode", "type", "--solution", worktree, "--out", ".line-by-line/plain");
+  assert.equal(built.code, 0, built.out);
+  assert.match(built.out, /1 files to type/, "only the edited file differs from the project");
+  author(join(project, ".line-by-line", "plain"));
+  assert.match(run(project, "assemble", ".line-by-line/plain").out, /VALID/);
+  const done = run(project, "finish", ".line-by-line/plain");
+  assert.match(done.out, /CLEAN/, done.out);
+  assert.ok(!existsSync(join(project, ".line-by-line")));
+});
+
+test("CLI: scratch copies (without ignored files) in a git repository with no commits", () => {
+  const project = tmp("lbl-fresh-");
+  writeFiles(project, { ...FILES, ".gitignore": "dist/\n", "dist/out.js": "built\n" });
+  sh(project, "git", ["init", "-q", "-b", "main"]);
+  const made = run(project, "scratch", ".line-by-line/fresh");
+  assert.equal(made.code, 0, made.out);
+  assert.match(made.out, /SCRATCH copy/);
+  const worktree = join(project, ".line-by-line", "fresh", "worktree");
+  assert.ok(!existsSync(join(worktree, "dist")), "ignored files aren't copied");
+  writeFiles(worktree, { "app/helper.py": CHANGES["app/helper.py"] });
+  const built = run(project, "build", "--mode", "type", "--solution", worktree, "--out", ".line-by-line/fresh");
+  assert.equal(built.code, 0, built.out);
+  assert.match(built.out, /1 files to type/);
+  assert.match(run(project, "finish", ".line-by-line/fresh").out, /CLEAN/);
+});
+
+test("CLI: scratch makes a git worktree when there's a commit, and finish removes it", () => {
+  const project = makeRepo(FILES);
+  const made = run(project, "scratch", ".line-by-line/wt");
+  assert.equal(made.code, 0, made.out);
+  assert.match(made.out, /SCRATCH worktree/);
+  assert.match(sh(project, "git", ["worktree", "list"]), /\.line-by-line\/wt\/worktree/);
+  assert.match(run(project, "scratch", ".line-by-line/wt").out, /already exists/);
+  writeFiles(join(project, ".line-by-line", "wt"), { "draft.json": "{}" });
+  assert.match(run(project, "finish", ".line-by-line/wt").out, /CLEAN/);
+  assert.doesNotMatch(sh(project, "git", ["worktree", "list"]), /\.line-by-line/);
+});
+
+test("CLI: learn mode end to end without git installed", () => {
+  const project = tmp("lbl-nogit-");
+  writeFiles(project, FILES);
+  const made = noGit(project, "scratch", ".line-by-line/learn");
+  assert.equal(made.code, 0, made.out);
+  assert.match(made.out, /SCRATCH copy/);
+  const dir = join(project, ".line-by-line", "learn");
+  writeFiles(join(dir, "worktree"), { "app/helper.py": CHANGES["app/helper.py"] });
+  const built = noGit(project, "build", "--mode", "learn", "--solution", join(dir, "worktree"), "--out", ".line-by-line/learn");
+  assert.equal(built.code, 0, built.out);
+  author(dir, { holes: "## app/helper.py:2-2 ret\nReturn the answer.\n" });
+  assert.match(noGit(project, "assemble", dir).out, /VALID/);
+  const subDir = join(dir, "submissions", encodeURIComponent("app/helper.py"));
+  mkdirSync(subDir, { recursive: true });
+  writeFileSync(join(subDir, "1.json"), JSON.stringify({ holes: { ret: "    return 42" } }));
+  const checked = noGit(project, "check", dir, "app/helper.py");
+  assert.equal(checked.code, 0, checked.out);
+  assert.equal(readFileSync(join(dir, "check", "app", "helper.py"), "utf8"), CHANGES["app/helper.py"]);
+  assert.match(noGit(project, "finish", dir).out, /CLEAN/);
+  assert.ok(!existsSync(join(project, ".line-by-line")));
 });

@@ -17,6 +17,15 @@ export function isGitRepo(dir) {
   }
 }
 
+function gitIgnores(dir) {
+  try {
+    git(dir, ["check-ignore", "-q", dir], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const notSessionData = (p) => p && p !== SESSION_DIR && !p.startsWith(SESSION_DIR + "/");
 
 /** A directory on disk (the project, or a scratch worktree holding the solution). */
@@ -25,7 +34,8 @@ export function dirSource(dir) {
     kind: "dir",
     path: dir,
     list() {
-      if (isGitRepo(dir)) {
+      // A folder git ignores (a scratch copy inside .line-by-line/) gets walked: git would list nothing in it.
+      if (isGitRepo(dir) && !gitIgnores(dir)) {
         return git(dir, ["ls-files", "-co", "--exclude-standard", "-z"]).toString().split("\0").filter(notSessionData);
       }
       const out = [];

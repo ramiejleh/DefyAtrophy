@@ -23,15 +23,24 @@ chat either. Typing it is the whole point.
 
 - If `$ARGUMENTS` is empty or ambiguous, ask what to build. Restate the task in one sentence.
 - Pick a short kebab-case slug (e.g. `retry-backoff`). The session folder is `.line-by-line/<slug>` from the project root, written `<session>` below.
-- Run `git status --porcelain`. If files the task will probably touch have uncommitted changes, say so
-  and ask whether to include them in the scratch copy.
+- If the project is a git repository with commits, run `git status --porcelain`. If files the task will
+  probably touch have uncommitted changes, say so and ask whether to include them in the scratch copy.
+  Without git, skip this: the scratch copy is taken from the files as they are now.
 
 ## 2. Scratch copy
 
-- Git: `git worktree add --detach "<session>/worktree" HEAD`. If the user wants their uncommitted changes
-  included: `git diff HEAD | git -C "<session>/worktree" apply`, and copy untracked files the task needs.
-- Not git: copy the project into `<session>/worktree`, skipping `.line-by-line` and dependency folders.
-- Dependencies: link rather than reinstall where you can (e.g. `ln -s <project root>/node_modules <session>/worktree/node_modules`).
+```
+lbl scratch "<session>"
+```
+
+It works with or without git, and its last line says which kind of copy it made:
+- `SCRATCH worktree`: a git worktree of HEAD. If the user wants their uncommitted changes included:
+  `git diff HEAD | git -C "<session>/worktree" apply`, and copy untracked files the task needs.
+- `SCRATCH copy`: a plain copy of the project's files (no git, or no commits yet). It already includes
+  everything as it is now.
+
+`node_modules` folders are linked into the copy. For other dependency folders, link rather than
+reinstall where you can.
 
 ## 3. Solve and verify, in the worktree
 
@@ -95,14 +104,14 @@ If anything is pending when you start (for example after a restart), `lbl status
 ## 8. Finish: leave no trace
 
 When it's over, the project must look exactly as if you had implemented the task directly: the
-feature's files and nothing else. No session data, no worktree, no git exclude entry.
+feature's files and nothing else. No session data, no scratch copy, no git exclude entry.
 
 1. Run the project's checks in the **real** project and note the results.
 2. Read the grades and reflections you'll want for the summary. They're about to be deleted.
-3. Run `lbl finish "<session>"`. It stops the game server, removes the scratch worktree, deletes the
+3. Run `lbl finish "<session>"`. It stops the game server, removes the scratch copy, deletes the
    session data, and once no other sessions are left, deletes `.line-by-line/` and the
-   `.git/info/exclude` entry it added. It prints `CLEAN` when nothing is left. If it lists leftovers,
-   fix them.
-4. Check `git status --porcelain` and `git worktree list`: only the task's own changes should show,
-   and no extra worktree.
+   `.git/info/exclude` entry it added (if any). It prints `CLEAN` when nothing is left. If it lists
+   leftovers, fix them.
+4. In a git repository, check `git status --porcelain` and `git worktree list`: only the task's own
+   changes should show, and no extra worktree. Without git, confirm `.line-by-line/` is gone.
 5. Summarise what changed in a few lines, plus the check results and how the reflections went.

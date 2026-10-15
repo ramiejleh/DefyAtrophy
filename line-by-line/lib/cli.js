@@ -9,6 +9,7 @@ import { validate } from "./validate.js";
 
 const USAGE = `line-by-line <command>
 
+  scratch   <session-dir> [--project .]   type/learn: Claude's scratch copy (a git worktree, or a plain copy without git)
   build     --mode type|learn|review [--project .] [--solution <dir>] [--base <ref>] [--task "..."] [--out <dir>]
             --mode review --focus <path[:10-40,60-80]> …   walk through existing code instead of a branch
   assemble  <session-dir>          merge steps.json + notes.txt / holes.txt into session.json, then validate
@@ -17,7 +18,7 @@ const USAGE = `line-by-line <command>
   check     <session-dir> <path>   learn mode: put the latest submission into check/ for testing
   status    <session-dir>          progress, plus anything waiting for Claude
   list      [--project .]          sessions in this project
-  finish    <session-dir>          stop the server, remove the worktree and every trace of the session
+  finish    <session-dir>          stop the server, remove the scratch copy and every trace of the session
 `;
 
 const enc = (p) => encodeURIComponent(p);
@@ -308,6 +309,54 @@ function findNodeModules(root, depth = 0, found = []) {
   return found;
 }
 
+/**
+ * Type and learn mode: Claude's scratch copy of the project. A git worktree when the project has a commit
+ * to check out, otherwise a plain copy of the files dirSource lists, so both sides of the diff match.
+ */
+export function scratch(sessionDir, projectDir) {
+  const worktree = join(sessionDir, "worktree");
+  if (existsSync(worktree)) throw new Error(`${worktree} already exists`);
+  ignoreSessionDir(projectDir);
+  mkdirSync(sessionDir, { recursive: true });
+  if (isGitRepo(projectDir)) {
+    try {
+      git(projectDir, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], { stdio: "ignore" });
+      git(projectDir, ["worktree", "add", "--detach", worktree, "HEAD"], { stdio: "ignore" });
+      return "worktree";
+    } catch {
+      // no commits yet: fall through to a copy
+    }
+  }
+  for (const path of dirSource(projectDir).list()) {
+    const src = join(projectDir, path);
+    if (!existsSync(src)) continue; // tracked but deleted
+    mkdirSync(dirname(join(worktree, path)), { recursive: true });
+    cpSync(src, join(worktree, path));
+  }
+  mkdirSync(worktree, { recursive: true });
+  for (const nm of findNodeModules(projectDir)) {
+    if (nm.startsWith(join(projectDir, SESSION_DIR) + sep)) continue;
+    const dest = join(worktree, nm.slice(projectDir.length));
+    mkdirSync(dirname(dest), { recursive: true });
+    symlinkSync(nm, dest);
+  }
+  return "copy";
+}
+
+function cmdScratch(argv) {
+  const { values, positionals } = parseArgs({ args: argv, allowPositionals: true, options: { project: { type: "string", default: "." } } });
+  if (!positionals[0]) throw new Error("Usage: line-by-line scratch <session-dir> [--project .]");
+  const projectDir = absolute(values.project);
+  const sessionDir = absolute(positionals[0], projectDir);
+  const kind = scratch(sessionDir, projectDir);
+  out(
+    kind === "worktree"
+      ? `Created a git worktree of HEAD at ${join(sessionDir, "worktree")} (uncommitted changes aren't in it)`
+      : `Copied the project to ${join(sessionDir, "worktree")} (not a git repository with commits, so no worktree)`,
+    `SCRATCH ${kind}`,
+  );
+}
+
 /** What's done, and what's waiting on Claude: ungraded reflections, submissions and hint requests. */
 export function status(sessionDir) {
   const session = loadSession(sessionDir);
@@ -392,6 +441,7 @@ function cmdFinish([dir]) {
 export async function main(argv) {
   const [command, ...rest] = argv;
   try {
+    if (command === "scratch") return cmdScratch(rest);
     if (command === "build") return cmdBuild(rest);
     if (command === "assemble") return cmdAssemble(rest);
     if (command === "validate") return report(validate(absolute(rest[0] ?? ".")));

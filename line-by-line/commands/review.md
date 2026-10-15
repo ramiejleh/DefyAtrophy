@@ -22,6 +22,11 @@ Throughout, `lbl` means `"${CLAUDE_PLUGIN_ROOT}/cli/line-by-line"`. Always call 
 - **Anything else** ("the auth implementation", "how uploads get processed"): a **walkthrough** of
   existing code, whether or not it was ever a PR. Follow section B.
 
+A branch review needs git history. First check `git rev-parse --is-inside-work-tree` (it fails
+without git or outside a repository). If it isn't a git repository: anything in `$ARGUMENTS` is a
+walkthrough topic (section B). If `$ARGUMENTS` is empty, say that reviewing branch changes needs git,
+and ask what code they'd like to walk through instead.
+
 In both kinds, the notes explain what each line does and why it's there. Don't write an overview, a
 verdict, a critique or suggested changes.
 

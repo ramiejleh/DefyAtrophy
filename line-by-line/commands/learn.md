@@ -22,7 +22,8 @@ runs. If you see that prompt, use the worktree path instead.
 ## 1–3. Scope, scratch copy, solve and verify
 
 Exactly as in type mode (`/line-by-line:type` steps 1–3): restate the task, pick a slug and
-the session folder `.line-by-line/<slug>` (written `<session>` below), then `git worktree add --detach "<session>/worktree" HEAD`. Solve the
+the session folder `.line-by-line/<slug>` (written `<session>` below), then `lbl scratch "<session>"`, which
+makes a git worktree or, without git, a plain copy (type mode step 2 explains both). Solve the
 task in the worktree and verify it with the project's own checks. The reference must pass them, because
 grading compares the user's code against the same checks.
 
@@ -83,6 +84,6 @@ tail -n 0 -F "<session>/server.log" | grep --line-buffered '^LBL '
 
 As in type mode (step 8, "leave no trace"): run the project's checks in the real project (the
 user's code is what's there now), read the grades you need for the summary, then run
-`lbl finish "<session>"` until it prints `CLEAN`, and confirm `git status` shows only the task's own
-changes. Summarise honestly, including how many attempts each file took and anything the user should
+`lbl finish "<session>"` until it prints `CLEAN`, and (in a git repository) confirm `git status` shows
+only the task's own changes. Summarise honestly, including how many attempts each file took and anything the user should
 revisit.

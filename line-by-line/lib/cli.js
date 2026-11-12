@@ -195,6 +195,7 @@ function cmdBuild(argv) {
   out(
     `Built a ${mode} draft in ${outDir}`,
     `  ${result.files} files to ${mode === "review" ? "step through" : mode === "learn" ? "write" : "type"}, ${result.lines} changed lines, ${result.autoApplied} applied automatically`,
+    ...result.skipped.map((a) => `    skipped ${a.path} (${a.action === "delete" ? "deleted" : "written"} as-is: ${a.reason})`),
     "",
     "Next:",
     "  1. Fill in steps.json (titles, goals, file order and roles, diagram context and edges)",

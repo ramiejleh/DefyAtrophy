@@ -148,11 +148,11 @@ function openFile(path) {
 function alsoHtml(step, removedFiles) {
   const auto = step.autoApplied ?? [];
   if (!auto.length && !removedFiles.length) return "";
-  const verb = mode() === "review" ? "Also changed (not shown line by line)" : "Also applied when this step is done";
+  const verb = mode() === "review" ? "Also changed (not shown line by line)" : "Not typed: applied as-is when this step is done";
   return `
     <h3>${verb}</h3>
     <ul class="also">
-      ${auto.map((a) => `<li><code>${esc(a.path)}</code><span>${a.action === "delete" ? "deleted" : "updated"} · ${esc(a.reason)}</span></li>`).join("")}
+      ${auto.map((a) => `<li><code>${esc(a.path)}</code><span>${a.action === "delete" ? "deleted" : a.baseHash ? "updated" : "added"} · ${esc(a.reason)}</span></li>`).join("")}
       ${removedFiles.map((f) => `<li><code>${esc(f.path)}</code><span>deleted${mode() === "review" ? "" : ": you'll confirm it"}</span></li>`).join("")}
     </ul>`;
 }
@@ -223,8 +223,10 @@ function drawEdges(step) {
   diagram.classList.toggle("linking", related.size > 0);
   diagram.querySelectorAll(".card").forEach((el) => el.classList.toggle("linked", related.has(el.dataset.node)));
   const box = diagram.getBoundingClientRect();
-  svg.setAttribute("width", diagram.scrollWidth);
-  svg.setAttribute("height", diagram.scrollHeight);
+  // CSS stretches the layer over the diagram; sizing it from scrollWidth would count the layer itself
+  // and keep the diagram from ever getting narrower again
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "100%");
   const rectOf = (path) => {
     const el = diagram.querySelector(`[data-node="${CSS.escape(path)}"]`);
     if (!el) return null;

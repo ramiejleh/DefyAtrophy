@@ -29,8 +29,16 @@ The template has every changed file in one step. Split it.
   then each hop it takes.
 - **Each file is in exactly one step.** `assemble` fails if a changed file is missing, so if a big
   file must be split, split the work across steps by file instead.
-- `autoApplied` lists untyped changes for that step: lockfiles, binaries, generated files and huge
-  files. The draft puts them in the first step. Move them to the step they belong to.
+- `autoApplied` lists changes that are applied as-is, never typed: lockfiles, assets (SVGs, images,
+  fonts, media), data files, binaries, generated code and config (build output, snapshots,
+  `*.tsbuildinfo`, `next-env.d.ts`, protobuf output, wrapper scripts, files marked `@generated` or
+  `DO NOT EDIT`) and huge files. The draft finds these on its own and puts them in the first step.
+  Move each to the step it belongs to; the game lists them on that step, with the reason.
+- **Skip what nobody would type.** If a changed file the draft kept is still clearly not worth typing
+  (a generated OpenAPI client, a tool's config dump, an exported icon set, a large fixture), move it
+  from `files` to `autoApplied` as `{ "path": "…", "reason": "generated client" }`. The reason shows
+  in the game. Never skip hand-written logic, tests or config someone would edit by hand: when in
+  doubt, keep it typed. Walkthroughs can't skip; leave the file out of `--focus` instead.
 
 ```jsonc
 {
@@ -48,7 +56,7 @@ The template has every changed file in one step. Split it.
       "files": [
         { "path": "src/retry.ts", "order": 1, "role": "Runs async work again with growing waits", "intro": "…" }
       ],
-      "autoApplied": ["package-lock.json"],
+      "autoApplied": ["package-lock.json", { "path": "src/api/generated.ts", "reason": "generated client" }],
       "diagram": {
         "context": [{ "path": "src/http/client.ts", "note": "Calls retry in step 2" }],
         "edges": [{ "from": "src/http/client.ts", "to": "src/retry.ts", "label": "imports retry()" }]

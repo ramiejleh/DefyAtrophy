@@ -66,7 +66,8 @@ export function validate(dir) {
 
   const draft = readJson(join(dir, "draft.json"), null);
   if (draft) {
-    for (const f of draft.files) if (!seenPaths.has(f.path)) errors.push(`${f.path} changed but isn't in any step`);
+    const skipped = new Set((session.steps ?? []).flatMap((s) => (s.autoApplied ?? []).map((a) => a.path)));
+    for (const f of draft.files) if (!seenPaths.has(f.path) && !skipped.has(f.path)) errors.push(`${f.path} changed but isn't in any step`);
   }
 
   const cap = CAPS[mode];

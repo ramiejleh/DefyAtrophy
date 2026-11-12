@@ -5,10 +5,30 @@ import { MODES, lineString, rows, sha256, splitContent } from "./session.js";
 import { changedBetween } from "./sources.js";
 
 const LOCKFILES = new Set([
-  "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "Cargo.lock", "poetry.lock", "uv.lock",
-  "Pipfile.lock", "Gemfile.lock", "composer.lock", "go.sum", "flake.lock", "mix.lock", "pubspec.lock",
+  "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock", "deno.lock",
+  "Cargo.lock", "poetry.lock", "uv.lock", "pdm.lock", "Pipfile.lock", "Gemfile.lock", "composer.lock", "go.sum",
+  "go.work.sum", "flake.lock", "mix.lock", "pubspec.lock", "Podfile.lock", "Package.resolved", "packages.lock.json",
+  "gradle.lockfile", ".terraform.lock.hcl", "conda-lock.yml",
 ]);
-const GENERATED = /(^|\/)(dist|build|out|\.next|coverage|node_modules|__pycache__|target)\/|\.min\.(js|css)$|\.map$/;
+/** Output folders, and files that tools write and nobody edits by hand. */
+const GENERATED = new RegExp(
+  [
+    String.raw`(^|/)(dist|build|out|\.next|\.nuxt|\.output|\.svelte-kit|\.turbo|\.vercel|coverage|node_modules|__pycache__|target|__snapshots__|\.yarn|\.gradle|\.mvn|gradle/wrapper)/`,
+    String.raw`\.(min\.(js|css)|map|snap|tsbuildinfo|pbxproj|xcworkspacedata|pb\.go|g\.dart|freezed\.dart)$`,
+    String.raw`(_pb2(_grpc)?\.pyi?|\.generated\.[a-z]+|(^|/)next-env\.d\.ts|(^|/)\.pnp\.c?js|(^|/)\.pnp\.loader\.mjs|(^|/)(gradlew|mvnw)(\.bat|\.cmd)?|(^|/)migration_lock\.toml)$`,
+    String.raw`(^|/)drizzle/meta/`,
+  ].join("|"),
+);
+/** Images, fonts, media and documents: copied over, never typed. */
+const ASSETS = new Set([
+  "svg", "png", "jpg", "jpeg", "gif", "webp", "avif", "ico", "icns", "bmp", "tif", "tiff", "psd", "heic",
+  "woff", "woff2", "ttf", "otf", "eot", "mp3", "wav", "ogg", "flac", "m4a", "mp4", "webm", "mov", "avi",
+  "pdf", "lottie", "riv",
+]);
+/** Data files: fixtures and exports, not code to learn from. */
+const DATA = new Set(["csv", "tsv", "jsonl", "ndjson", "parquet", "sqlite", "db"]);
+/** A header a tool leaves on files it writes. */
+const GENERATED_MARK = /@generated|\bDO NOT EDIT\b|\bauto-?generated\b|automatically generated|^\W*(this file (is|was) )?(code )?generated (by|with|from)\b/i;
 const MAX_LINES = 1500;
 
 const LANGUAGES = {
@@ -36,11 +56,17 @@ function tabSizeOf(lines, language) {
   return widths.length && Math.min(...widths) >= 4 ? 4 : 2;
 }
 
-function untypeableReason(path, buf, split) {
-  if (LOCKFILES.has(basename(path))) return "lockfile";
+/** Why a file is applied as-is instead of typed, or null when it's worth typing. */
+export function untypeableReason(path, buf, split) {
+  const name = basename(path);
+  const ext = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+  if (LOCKFILES.has(name) || ext === "lock") return "lockfile";
+  if (ASSETS.has(ext)) return "asset";
+  if (DATA.has(ext)) return "data file";
   if (GENERATED.test(path)) return "generated";
   const head = buf.subarray(0, 8000);
   if (head.includes(0) || !Buffer.from(buf.toString("utf8"), "utf8").equals(buf)) return "binary";
+  if (split.lines.slice(0, 5).some((l) => GENERATED_MARK.test(l.text))) return "generated";
   if (split.mixed) return "mixed line endings";
   if (split.lines.length > MAX_LINES) return `over ${MAX_LINES} lines`;
   return null;
@@ -167,7 +193,7 @@ export function build({ mode, from, to, projectDir, out, task = "", base = null 
     writeFileSync(join(out, "notes-todo.txt"), todo.join("\n") + "\n");
   }
 
-  return { files: files.length, autoApplied: autoApplied.length, lines: files.reduce((n, f) => n + rows(f).filter((r) => r.kind === "typed" && r.text).length, 0) };
+  return { files: files.length, autoApplied: autoApplied.length, skipped: autoApplied, lines: files.reduce((n, f) => n + rows(f).filter((r) => r.kind === "typed" && r.text).length, 0) };
 }
 
 /**
@@ -357,7 +383,35 @@ export function assemble(dir) {
     }
   }
 
-  const assignedAuto = new Set(plan.steps.flatMap((s) => s.autoApplied ?? []));
+  // Claude can skip a changed file the rules missed (generated config, an exported asset):
+  // an `autoApplied` entry naming it, as { path, reason }, applies it as-is instead of typing it.
+  const autoEntry = (e) => (typeof e === "string" ? { path: e, reason: null } : e);
+  for (const s of plan.steps) {
+    for (const { path, reason } of (s.autoApplied ?? []).map(autoEntry)) {
+      if (autoByPath.has(path)) continue;
+      const file = byPath.get(path);
+      if (!file) {
+        errors.push(`step ${s.id}: autoApplied names ${path}, which isn't a changed file`);
+        continue;
+      }
+      if (!reason) {
+        errors.push(`step ${s.id}: autoApplied ${path} needs a reason, e.g. { "path": "${path}", "reason": "generated config" }`);
+        continue;
+      }
+      if (draft.subject === "code") {
+        errors.push(`step ${s.id}: ${path} can't be skipped in a walkthrough; leave it out of --focus instead`);
+        continue;
+      }
+      if (plan.steps.some((t) => (t.files ?? []).some((f) => f.path === path))) {
+        errors.push(`${path} is both typed (in files) and autoApplied: pick one`);
+        continue;
+      }
+      autoByPath.set(path, { path, action: file.action === "delete" ? "delete" : "write", reason, baseHash: file.baseHash, targetHash: file.targetHash });
+      byPath.delete(path);
+    }
+  }
+
+  const assignedAuto = new Set(plan.steps.flatMap((s) => (s.autoApplied ?? []).map((e) => autoEntry(e).path)));
   const steps = plan.steps.map((s, si) => {
     const files = (s.files ?? []).map((entry) => {
       const draftFile = byPath.get(entry.path);
@@ -377,7 +431,7 @@ export function assemble(dir) {
       }
       return file;
     });
-    const auto = (s.autoApplied ?? []).map((p) => autoByPath.get(p)).filter(Boolean);
+    const auto = (s.autoApplied ?? []).map((e) => autoByPath.get(autoEntry(e).path)).filter(Boolean);
     if (si === 0) for (const a of draft.autoApplied) if (!assignedAuto.has(a.path)) auto.push(a);
     const { files: _f, autoApplied: _a, ...meta } = s;
     return { ...meta, files: files.filter(Boolean), autoApplied: auto.map((a) => ({ ...a, step: s.id })) };

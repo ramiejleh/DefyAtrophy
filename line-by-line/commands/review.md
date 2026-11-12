@@ -36,7 +36,8 @@ verdict, a critique or suggested changes.
    `review-<branch>` in kebab-case. The session folder is `.line-by-line/<slug>`, written `<session>` below.
 2. `lbl build --mode review --base "<ref>" --task "review <branch>" --out "<session>"` (leave out
    `--base` for the default branch). `notes-todo.txt` lists every added line (`path:N`) and removed
-   line (`path:-N`).
+   line (`path:-N`). Lockfiles, assets, data files and generated files are left out of the stepping
+   and listed on their step instead; the build output names them.
 3. Read the changed files properly, then load the **`authoring-sessions`** skill and follow its
    review-mode section. Order the steps so a reader can follow them: types and data first, then the
    core logic, then the callers, then tests and config. Not alphabetical file order.

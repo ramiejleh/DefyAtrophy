@@ -800,6 +800,7 @@ kbd,
 }
 
 .folder-label {
+  overflow-wrap: anywhere;
   font-family: var(--mono);
   font-size: 12px;
   color: var(--dim);
@@ -956,6 +957,7 @@ button.card:hover {
 }
 
 .diagram-hint {
+  overflow-wrap: anywhere;
   margin: 14px 2px 0;
   font-size: 13px;
   color: var(--dim);
@@ -963,7 +965,9 @@ button.card:hover {
 
 .step-side {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+  min-width: 0;
 }
 
 .brief,
@@ -1037,6 +1041,8 @@ button.card:hover {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .also span {
@@ -1049,6 +1055,7 @@ button.card:hover {
   margin: 0;
   padding: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 
@@ -2490,7 +2497,7 @@ textarea.reflect:focus {
 
   .workspace,
   .step-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .editor {

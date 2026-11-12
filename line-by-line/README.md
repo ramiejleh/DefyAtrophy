@@ -28,6 +28,8 @@ the code had been written directly.
 2. **Where the files live.** Opening a step shows its files inside their real folders, numbered in a
    suggested order, with who imports whom written on each card (hover one to see its arrows) and a few
    existing files for context. Open any file in any order. Finished files reopen read-only.
+   Files nobody would type (lockfiles, SVGs and other assets, data files, generated code and config)
+   are listed on their step with the reason, and applied as-is when the step is done.
 3. **The file.**
    - **Type mode** shows the whole file. Existing lines are dimmed, removed lines are struck through,
      and the lines you type are marked. Scroll anywhere for context: keystrokes only ever go into the

@@ -109,6 +109,15 @@ async function e2eType() {
     await page.hover('.card[data-node="src/retry.ts"]');
     await sleep(100);
     assert.equal(await page.$$eval("svg.edges g.edge", (e) => e.length), 2, "hovering a card draws its import arrows");
+    // the step screen never scrolls sideways, even after the window shrinks to phone width
+    for (const width of [1280, 768, 360]) {
+      await page.setViewport({ width, height: 640 });
+      await sleep(300);
+      const [client, scroll] = await page.evaluate(() => [document.documentElement.clientWidth, Math.max(document.documentElement.scrollWidth, document.querySelector(".screen").scrollWidth)]);
+      assert.ok(scroll <= client, `the step screen fits at ${width}px (${scroll} > ${client})`);
+    }
+    await page.setViewport({ width: 1280, height: 640 });
+    await sleep(300);
     const folders = await page.$$eval(".folder-label", (els) => els.map((e) => e.textContent.trim()));
     assert.ok(folders.some((f) => f.includes("src/")) && folders.some((f) => f.includes("http/")), "files sit in their real folders");
 

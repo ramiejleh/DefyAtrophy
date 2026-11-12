@@ -59,6 +59,11 @@ lbl build --mode type --solution "<session>/worktree" --task "<the task, in the 
 
 This writes `draft.json`, a `steps.json` template and `notes-todo.txt` (every line to type).
 
+It also lists the files it **skipped**: lockfiles, assets such as SVGs and images, data files and
+generated code or config. They aren't typed; the game applies them as-is when their step is done and
+lists them on that step. Tell the user in one line which files were skipped and why. If another file
+is clearly not worth typing, skip it too (see the `authoring-sessions` skill).
+
 ## 5. Author the session
 
 Load the **`authoring-sessions`** skill and follow it. It covers splitting into steps, the

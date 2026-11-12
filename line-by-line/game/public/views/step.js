@@ -5,7 +5,7 @@ import { burst, confetti, sfx } from "../fx.js";
 import { fileSize, fileStatus, mode, nextSuggested, reflects, saveProgress, stepFilesDone, stepNumber, stepPercent, stepStatus, store, walkthrough } from "../store.js";
 import { buildTree } from "../tree.js";
 import { api, esc, fileName, md, mdInline, toast } from "../util.js";
-import { spool } from "./map.js";
+import { stepEmblem } from "./map.js";
 
 let resizeObserver;
 let shownStepId = null;
@@ -46,7 +46,7 @@ export function render({ stepId }) {
         <header class="step-head">
           <button class="btn ghost small" data-back>← All steps</button>
           <div class="step-title">
-            ${spool(i, status)}
+            ${stepEmblem(step, i, status)}
             <div><p class="eyebrow">Step ${i + 1} of ${store.session.steps.length}</p><h1>${esc(step.title)}</h1><p class="tagline">${esc(step.tagline ?? "")}</p></div>
           </div>
           <div class="step-progress"><div class="bar"><i style="width:${pct}%"></i></div><span>${pct}%</span></div>

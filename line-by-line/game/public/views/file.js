@@ -6,10 +6,9 @@
 import { go } from "../app.js";
 import { burst, floatText, sfx, sound } from "../fx.js";
 import { highlightLines, spans } from "../highlight.js";
-import { Loom } from "../loom.js";
+import { Scanlines } from "../scan.js";
 import { computeStats, emptyStats, fileProgress, isApplied, mode, refresh, saveProgress, stepNumber, stepOf, store, walkthrough } from "../store.js";
 import { ApiError, api, esc, md, mdInline, modal, rowsOf, stopsOf, toast } from "../util.js";
-import { stepColor } from "./map.js";
 import { finishFile } from "./step.js";
 
 /** Gaps between keystrokes longer than this don't count as typing time (ms) */
@@ -58,7 +57,7 @@ export function render({ path, read = false }) {
         <aside class="side">
           <div class="note-card glass"><h4><span id="note-label">What this line does</span></h4><div class="note-text" id="note" aria-live="polite"></div></div>
           <div class="history glass"><h4><span>Notes in this file</span></h4><ol id="history"></ol></div>
-          <div class="loom-card glass"><h4><span>Your weave</span><span id="loom-count"></span></h4><canvas id="loom"></canvas></div>
+          <div class="scan-card glass"><h4><span>Scanlines</span><span id="scan-count"></span></h4><canvas id="scan"></canvas></div>
         </aside>
       </div>
     </div>`;
@@ -77,7 +76,7 @@ export function render({ path, read = false }) {
     focusKeys();
   });
 
-  v.loom = new Loom(document.getElementById("loom"), { total: stops.length, filled: kind === "read" ? stops.length : fp.cursor, color: stepColor(stepNumber(step) - 1) });
+  v.scan = new Scanlines(document.getElementById("scan"), { total: stops.length, filled: kind === "read" ? stops.length : fp.cursor, seed: file.path });
   rebuildHistory();
   if (kind === "type" || kind === "review") renderCurrent(true);
   else {
@@ -89,7 +88,7 @@ export function render({ path, read = false }) {
 }
 
 export function leave() {
-  v?.loom?.destroy();
+  v?.scan?.destroy();
   v = null;
   document.querySelector(".focus-veil")?.remove();
   $keys.blur();
@@ -177,6 +176,7 @@ function renderCurrent(isNew = false) {
   const wrong = [...v.wrong].map((c) => `<span class="wrong">${c === " " ? "·" : esc(c)}</span>`).join("");
   const ghost = store.progress.blind ? "" : esc(r.text.slice(v.typed.length + v.wrong.length));
   el.classList.toggle("ready", ready);
+  v.scan.partial(v.typed.length / Math.max(1, r.text.length));
   el.querySelector(".src").innerHTML = `${esc(r.indent)}${typed}${wrong}<span class="caret"></span><span class="ghost">${ghost}</span>${
     ready ? `<span class="enter-hint">press Enter ⏎</span>` : ""
   }`;
@@ -310,7 +310,7 @@ function updatePos() {
             ? `${walkthrough() ? "Line" : "Changed line"} ${Math.min(at + 1, total)} of ${total}`
             : `${at} of ${total} lines typed`;
   }
-  const lc = document.getElementById("loom-count");
+  const lc = document.getElementById("scan-count");
   if (lc) lc.textContent = `${v.kind === "read" ? total : at} / ${total}`;
 }
 
@@ -327,12 +327,12 @@ function hudStats(kind) {
 }
 
 function hudButtons(kind) {
-  const soundBtn = `<button class="icon-btn" id="btn-sound" title="Sound" aria-label="Toggle sound">${sound.enabled ? "🔊" : "🔈"}</button>`;
+  const soundBtn = `<button class="icon-btn" id="btn-sound" title="Sound" aria-label="Toggle sound">${sound.enabled ? "SND" : "MUTE"}</button>`;
   if (kind === "type") {
     return `<button class="icon-btn" id="btn-autocomplete" title="Autocomplete this line (Tab)" aria-label="Autocomplete this line">⇥</button>
-      <button class="icon-btn" id="btn-blind" title="Hide hints (Shift+Tab)" aria-label="Toggle blind mode">${store.progress.blind ? "🙈" : "👁"}</button>
+      <button class="icon-btn" id="btn-blind" title="Hide hints (Shift+Tab)" aria-label="Toggle blind mode">${store.progress.blind ? "BLIND" : "HINTS"}</button>
       ${soundBtn}
-      <button class="icon-btn" id="btn-pause" title="Pause (Esc)" aria-label="Pause">⏸</button>`;
+      <button class="icon-btn" id="btn-pause" title="Pause (Esc)" aria-label="Pause">II</button>`;
   }
   if (kind === "review") {
     return `<button class="icon-btn" id="btn-prev" title="Previous changed line (↑)" aria-label="Previous changed line">↑</button>
@@ -370,7 +370,7 @@ function wireHud(app) {
   app.querySelector("#btn-sound")?.addEventListener("click", (e) => {
     sound.enabled = !sound.enabled;
     store.progress.sound = sound.enabled;
-    e.currentTarget.textContent = sound.enabled ? "🔊" : "🔈";
+    e.currentTarget.textContent = sound.enabled ? "SND" : "MUTE";
     saveProgress();
     focusKeys();
   });
@@ -485,8 +485,8 @@ function toggleBlind() {
   if (v?.kind !== "type") return;
   store.progress.blind = !store.progress.blind;
   const btn = document.getElementById("btn-blind");
-  if (btn) btn.textContent = store.progress.blind ? "🙈" : "👁";
-  toast(store.progress.blind ? "Blind mode on: no ghost text, typos still show" : "Hints back on", store.progress.blind ? "🙈" : "👁");
+  if (btn) btn.textContent = store.progress.blind ? "BLIND" : "HINTS";
+  toast(store.progress.blind ? "Blind mode on: no ghost text, typos still show" : "Hints back on", store.progress.blind ? "~" : "✓");
   saveProgress();
   renderCurrent();
 }
@@ -509,7 +509,7 @@ function completeLine() {
   s.lines++;
   if (v.assisted) {
     s.assisted = (s.assisted ?? 0) + 1;
-    floatText(point.x, point.y - 20, "autocompleted · 0 XP", "#8b94b4");
+    floatText(point.x, point.y - 20, "autocompleted · 0 XP", "var(--dim)");
     sfx.line(0);
   } else {
     if (clean) {
@@ -521,7 +521,7 @@ function completeLine() {
     const gained = (2 + Math.ceil(r.text.length / 8)) * (clean ? multiplier : 1);
     s.xp += gained;
     store.progress.xp += gained;
-    floatText(point.x, point.y - 20, `+${gained} XP${multiplier > 1 && clean ? ` ×${multiplier}` : ""}`, clean ? "#2ec4b6" : "#8b94b4");
+    floatText(point.x, point.y - 20, `+${gained} XP${multiplier > 1 && clean ? ` ×${multiplier}` : ""}`, clean ? "var(--accent)" : "var(--dim)");
     burst(point.x, point.y, { count: clean ? 10 + Math.min(v.combo, 20) : 6, power: clean ? 1 + v.combo * 0.03 : 0.6 });
     sfx.line(v.combo);
     if (clean && v.combo > 0 && v.combo % 5 === 0) comboFlash(v.combo);
@@ -535,7 +535,7 @@ function completeLine() {
   fp.cursor++;
   refreshRow(k);
   document.getElementById(`r${k}`)?.classList.add("fresh");
-  v.loom.set(fp.cursor);
+  v.scan.set(fp.cursor);
   saveProgress();
   updateHud(true);
   if (fp.cursor >= v.stops.length) return completeFile();
@@ -545,7 +545,7 @@ function completeLine() {
 function comboFlash(combo) {
   const el = document.createElement("div");
   el.className = "combo-flash";
-  el.textContent = combo >= 10 ? `${combo} clean lines! ×3 XP` : `${combo} clean lines! ×2 XP`;
+  el.textContent = `>> COMBO x${combo} · XP ×${combo >= 10 ? 3 : 2}`;
   document.querySelector(".editor").append(el);
   el.addEventListener("animationend", () => el.remove());
 }
@@ -663,7 +663,7 @@ function move(delta) {
   const last = v.stops.length - 1;
   if (delta > 0 && fp.cursor >= last) {
     fp.cursor = v.stops.length;
-    v.loom.set(fp.cursor);
+    v.scan.set(fp.cursor);
     return completeFile();
   }
   const prev = curStopRow();
@@ -674,7 +674,7 @@ function move(delta) {
     if (r?.note) addHistory(r);
   }
   refreshRow(prev);
-  v.loom.set(fp.cursor);
+  v.scan.set(fp.cursor);
   saveProgress();
   sfx.key();
   renderCurrent(true);
@@ -702,7 +702,7 @@ $keys.addEventListener("input", (e) => {
 $keys.addEventListener("compositionend", flushInput);
 $keys.addEventListener("paste", (e) => {
   e.preventDefault();
-  if (v?.kind === "type") toast("No pasting. Typing it is the whole point.", "✋");
+  if (v?.kind === "type") toast("No pasting. Typing it is the whole point.", "!");
 });
 $keys.addEventListener("keydown", (e) => {
   if (e.isComposing || !v) return;

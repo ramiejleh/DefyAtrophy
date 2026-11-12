@@ -16,20 +16,13 @@ writes into the project while a session is running. When a session ends, Claude 
 it: the scratch copy, the session data and the git exclude entry. Your project is left exactly as if
 the code had been written directly.
 
-https://github.com/user-attachments/assets/6664ca3c-d2eb-4740-89e1-9f1e12f1f32c
-
-<details>
-<summary>Can't play the video here? An animated preview</summary>
-
-![line-by-line in action: the step diagram, typing a file with a note on every line, a graded reflection with the code beside it, learn mode graded against the tests, and review mode stepping through changes](https://raw.githubusercontent.com/ramiejleh/DefyAtrophy/main/docs/line-by-line-demo.gif)
-
-</details>
+![line-by-line in type mode: typing a file line by line on a green phosphor screen, a note on every line, and the file's pixel picture drawing one scanline per finished line](https://raw.githubusercontent.com/ramiejleh/DefyAtrophy/main/docs/line-by-line.jpg)
 
 ![A step: its files in their real folders, numbered in a suggested order, each card listing what it imports and what imports it, with the hovered card's arrows drawn](docs/step-diagram.jpg)
 
 ## How it plays
 
-1. **Steps.** The task is split into a few steps that build on each other, drawn as spools on a thread.
+1. **Steps.** The task is split into a few steps that build on each other, each drawn as a small pixel picture that fills in as you go.
    In type and review mode, a step unlocks once you've written the previous step's reflection; in learn
    mode, once the previous step's files are done.
 2. **Where the files live.** Opening a step shows its files inside their real folders, numbered in a
@@ -40,7 +33,7 @@ https://github.com/user-attachments/assets/6664ca3c-d2eb-4740-89e1-9f1e12f1f32c
      and the lines you type are marked. Scroll anywhere for context: keystrokes only ever go into the
      next line you type, and a pill takes you back to it. A typo turns red and blocks the line until you
      fix it. Tab autocompletes (for 0 XP), Shift+Tab hides the ghost text, and pasting is blocked. Every
-     line comes with Claude's note, and every finished line weaves a row on your loom.
+     line comes with Claude's note, and every finished line draws one scanline of the file's picture.
    - **Learn mode** gives you a real editor. Claude's lines are locked, and the highlighted parts are
      yours to write. Put the cursor in one to see its spec. Submit the file, and Claude runs your
      project's checks against your code and reviews it, with inline comments. You can ask for a hint;

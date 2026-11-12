@@ -51,14 +51,7 @@ Swap `line-by-line` for `interactive-pr-review` or `walkthrough` to install the 
 
 > Write the code yourself, line by line.
 
-https://github.com/user-attachments/assets/6664ca3c-d2eb-4740-89e1-9f1e12f1f32c
-
-<details>
-<summary>Can't play the video here? An animated preview</summary>
-
-![line-by-line in action: the step diagram, typing a file with a note on every line, a graded reflection with the code beside it, learn mode graded against the tests, and review mode stepping through changes](docs/line-by-line-demo.gif)
-
-</details>
+![line-by-line in type mode: typing a file line by line on a green phosphor screen, a note on every line, and the file's pixel picture drawing one scanline per finished line](docs/line-by-line.jpg)
 
 Ask Claude for a feature as usual. Claude solves it out of sight, in a scratch git worktree, and checks
 it with your project's own tests. Then, instead of Claude writing the files, **you** build them into
@@ -78,7 +71,7 @@ existing files show the whole file, and only your lines are typeable. After each
 you built, and Claude grades it, usually in under a minute.
 
 </td>
-<td width="50%"><img src="line-by-line/docs/type-mode.jpg" alt="Type mode: typing a file line by line with notes and a loom that fills as you go"></td>
+<td width="50%"><img src="line-by-line/docs/type-mode.jpg" alt="Type mode: typing a file line by line with notes and a pixel picture that draws a scanline per line"></td>
 </tr>
 <tr>
 <td width="50%" valign="top">
@@ -169,7 +162,7 @@ file is written into your project as you finish it.
 
 See [`line-by-line/README.md`](./line-by-line/README.md) for the full guide.
 
-<p align="center"><img src="line-by-line/docs/map.jpg" alt="The line-by-line map: steps as spools joined by a thread" width="80%"></p>
+<p align="center"><img src="line-by-line/docs/map.jpg" alt="The line-by-line map: each step a pixel picture on a dotted trail" width="80%"></p>
 
 ---
 

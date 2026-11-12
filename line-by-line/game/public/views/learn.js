@@ -6,11 +6,10 @@
 import { go } from "../app.js";
 import { burst, confetti, sfx } from "../fx.js";
 import { modeFor } from "../highlight.js";
-import { Loom } from "../loom.js";
+import { Scanlines } from "../scan.js";
 import { fileProgress, fileStatus, isApplied, latestGrade, refresh, saveProgress, stepNumber, stepOf, store } from "../store.js";
 import { ApiError, api, esc, holesOf, md, modal, toast } from "../util.js";
 import { resolveConflict } from "./file.js";
-import { stepColor } from "./map.js";
 import { finishFile } from "./step.js";
 
 const REVEAL_AFTER = 3;
@@ -55,7 +54,7 @@ export function render({ path }) {
         <aside class="side">
           <div class="note-card glass"><h4><span id="spec-label">What to write</span></h4><div class="note-text" id="spec"></div></div>
           <div class="grade-card glass" id="grade"></div>
-          <div class="loom-card glass"><h4><span>Your weave</span><span id="loom-count"></span></h4><canvas id="loom"></canvas></div>
+          <div class="scan-card glass"><h4><span>Scanlines</span><span id="scan-count"></span></h4><canvas id="scan"></canvas></div>
         </aside>
       </div>
     </div>`;
@@ -66,7 +65,7 @@ export function render({ path }) {
   app.querySelector("#btn-reveal")?.addEventListener("click", reveal);
 
   buildEditor(info);
-  v.loom = new Loom(document.getElementById("loom"), { total: Math.max(1, holes.length), filled: filledHoles(), color: stepColor(stepNumber(step) - 1) });
+  v.scan = new Scanlines(document.getElementById("scan"), { total: Math.max(1, holes.length), filled: filledHoles(), seed: file.path });
   renderSide();
   if (!readOnly) {
     v.cm.focus();
@@ -77,7 +76,7 @@ export function render({ path }) {
 }
 
 export function leave() {
-  v?.loom?.destroy();
+  v?.scan?.destroy();
   v = null;
 }
 
@@ -185,8 +184,8 @@ function buildEditor(info) {
       markHoleLines();
       clearTimeout(timer);
       timer = setTimeout(saveDraft, 500);
-      v.loom.set(filledHoles());
-      updateLoomCount();
+      v.scan.set(filledHoles());
+      updateScanCount();
     });
     cm.on("cursorActivity", showSpecAtCursor);
   }
@@ -274,8 +273,8 @@ function saveDraft() {
 
 /* ---------- side panel: attempts and grades ---------- */
 
-function updateLoomCount() {
-  const el = document.getElementById("loom-count");
+function updateScanCount() {
+  const el = document.getElementById("scan-count");
   if (el) el.textContent = `${filledHoles()} / ${v.holes.length} parts`;
 }
 
@@ -288,7 +287,7 @@ function renderSide() {
   const failed = (info?.grades ?? []).filter((g) => g.verdict !== "pass").length;
   const el = document.getElementById("grade");
   document.getElementById("attempts").textContent = info?.submissions ? `Attempt ${info.submissions}${status === "grading" ? " · grading…" : ""}` : "Not submitted yet";
-  updateLoomCount();
+  updateScanCount();
   const reveal = document.getElementById("btn-reveal");
   if (reveal) {
     reveal.disabled = failed < REVEAL_AFTER;
@@ -414,7 +413,7 @@ function reveal() {
           const i = v.parts.indexOf(part);
           const r = holeRange(i);
           v.cm.replaceRange(text, r.from, r.to);
-          toast(`Revealed <code>${esc(part.id)}</code>. Read it, then submit again.`, "👁");
+          toast(`Revealed <code>${esc(part.id)}</code>. Read it, then submit again.`, "!");
         } catch (error) {
           toast(esc(error.message), "!");
         }

@@ -1,12 +1,11 @@
-/* Step summary (stats, try-it commands, reflection) and the final tapestry once every step is done. */
+/* Step summary (stats, try-it commands, reflection) and every file's finished picture once all steps are done. */
 
 import { go } from "../app.js";
 import { burst, confetti, sfx } from "../fx.js";
 import { highlightLines, spans } from "../highlight.js";
-import { swatch } from "../loom.js";
+import { emblemSvg, rowsFor } from "../scan.js";
 import { computeStats, fileSize, mode, reflects, refresh, saveProgress, sessionDone, stepFilesDone, stepNumber, stepStats, store, walkthrough } from "../store.js";
 import { api, esc, fileName, md, mdInline, rowsOf, toast } from "../util.js";
-import { stepColor } from "./map.js";
 
 const MIN_REFLECTION = 50;
 let shown = null;
@@ -22,13 +21,12 @@ export function render(params) {
   const i = stepNumber(step) - 1;
   const next = store.session.steps[i + 1];
   const app = document.getElementById("app");
-  const bands = step.files.map((f) => ({ color: stepColor(i), rows: Math.max(2, Math.min(8, fileSize(f))), filled: 99 }));
 
   app.innerHTML = `
     <div class="screen">
       <div class="done-wrap">
         <div class="trophy">
-          <div class="swatch-big">${swatch(bands, { width: 160, height: 110 })}</div>
+          ${gallery(step.files, () => true)}
           <h1>Step ${i + 1} ${mode() === "review" ? (walkthrough() ? "read" : "reviewed") : "complete"}</h1>
           <p>${esc(step.title)}</p>
         </div>
@@ -43,7 +41,7 @@ export function render(params) {
             next
               ? `<button class="btn" data-act="next" ${reflects() && !store.state.reflections[step.id] ? "disabled title='Submit your reflection first'" : ""}>Next: ${esc(next.title)} →</button>`
               : sessionDone()
-                ? `<button class="btn" data-act="final">See the finished weave →</button>`
+                ? `<button class="btn" data-act="final">See every picture →</button>`
                 : ""
           }
         </div>
@@ -69,6 +67,16 @@ export function render(params) {
       setTimeout(() => (b.textContent = "Copy"), 1400);
     }),
   );
+}
+
+/** Each file's picture, captioned; files not finished yet show static. */
+function gallery(files, finished) {
+  return `<div class="gallery">${files
+    .map((f) => {
+      const rows = rowsFor(fileSize(f));
+      return `<figure title="${esc(f.path)}">${emblemSvg(f.path, { rows, locked: !finished(f) })}<figcaption>${esc(fileName(f.path))}</figcaption></figure>`;
+    })
+    .join("")}</div>`;
 }
 
 export function leave() {
@@ -300,7 +308,6 @@ function renderReflectionForm(step, initial) {
 
 function renderFinal() {
   const steps = store.session.steps;
-  const bands = steps.map((s, i) => ({ color: stepColor(i), rows: Math.max(3, Math.min(10, s.files.length * 3)), filled: stepFilesDone(s) ? 99 : 0 }));
   const lines = steps.reduce((n, s) => n + s.files.reduce((m, f) => m + fileSize(f), 0), 0);
   const app = document.getElementById("app");
   const waiting = reflects() ? steps.filter((s) => store.state.reflections[s.id] && !store.state.stepGrades[s.id]).length : 0;
@@ -308,8 +315,8 @@ function renderFinal() {
     <div class="screen">
       <div class="done-wrap final">
         <div class="trophy">
-          <div class="swatch-big">${swatch(bands, { width: 260, height: 200, cols: 22 })}</div>
-          <h1>${mode() === "review" ? (walkthrough() ? "Walkthrough finished" : "Branch reviewed") : "The weave is finished"}</h1>
+          ${gallery(steps.flatMap((s) => s.files), (f) => stepFilesDone(steps.find((s) => s.files.includes(f))))}
+          <h1>${mode() === "review" ? (walkthrough() ? "Walkthrough finished" : "Branch reviewed") : "Every picture is drawn"}</h1>
           <p>${esc(store.session.title)}</p>
         </div>
         <div class="tiles">

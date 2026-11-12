@@ -1,19 +1,20 @@
 import { go } from "../app.js";
-import { THREAD_COLORS } from "../fx.js";
+import { emblemSvg, rowsFor } from "../scan.js";
 import { XP_PER_LEVEL, fileSize, mode, sessionDone, stepPercent, stepStatus, store, walkthrough } from "../store.js";
 import { esc } from "../util.js";
 
 const MODE_COPY = {
-  type: ["Type mode", "Type the solution yourself, one line at a time. Every line you type is a thread in the weave."],
+  type: ["Type mode", "Type the solution yourself, one line at a time. Every line you type draws a scanline."],
   learn: ["Learn mode", "Claude laid out the files and signatures. You write the code, and each file is graded on its own."],
   review: ["Review", "Step through this branch's changes line by line, in an order that makes sense."],
 };
 
-export const stepColor = (i) => THREAD_COLORS[i % THREAD_COLORS.length];
-
-/** A spool wound with the step's colour. Locked spools are bare. */
-export const spool = (i, status, label = i + 1) =>
-  `<div class="spool ${status === "locked" ? "locked" : ""}" style="--c:${stepColor(i)}" aria-hidden="true"><span>${label}</span></div>`;
+/** The step's picture, drawn as far as the step is done. Locked steps show static. */
+export function stepEmblem(step, i, status) {
+  const rows = rowsFor(step.files.reduce((n, f) => n + fileSize(f), 0));
+  const locked = status === "locked";
+  return `<div class="emblem ${locked ? "locked" : ""}" aria-hidden="true">${emblemSvg(step.id, { rows, lit: (stepPercent(step) / 100) * rows, locked })}<b>${String(i + 1).padStart(2, "0")}</b></div>`;
+}
 
 export function render() {
   const { session, progress } = store;
@@ -48,7 +49,7 @@ export function render() {
             }
           </div>
         </header>
-        ${sessionDone() ? `<button class="finished glass" data-final>All steps done. See the finished weave →</button>` : ""}
+        ${sessionDone() ? `<button class="finished glass" data-final>All steps done. See every picture →</button>` : ""}
         <div class="path-wrap">
           <svg aria-hidden="true"><path id="trail" fill="none" stroke-width="3" stroke-linecap="round"/></svg>
           <ol class="path" aria-label="Steps">${session.steps.map((s, i) => nodeHtml(s, i, statuses[i], i === currentIdx)).join("")}</ol>
@@ -97,7 +98,7 @@ function nodeHtml(step, i, status, current) {
     <li>
       <button class="node ${current ? "current" : ""}" data-step="${esc(step.id)}" ${status === "locked" ? "disabled" : ""}
         style="animation-delay:${i * 70}ms" aria-label="Step ${i + 1}: ${esc(step.title)}${status === "locked" ? " (locked)" : ""}">
-        ${spool(i, status)}
+        ${stepEmblem(step, i, status)}
         <div class="node-body">
           <h3>${esc(step.title)}</h3>
           <p>${esc(step.tagline ?? "")}</p>
@@ -112,7 +113,7 @@ function drawTrail() {
   const path = document.getElementById("trail");
   if (!path) return;
   const box = path.closest(".path-wrap").getBoundingClientRect();
-  const points = [...document.querySelectorAll(".node .spool")].map((b) => {
+  const points = [...document.querySelectorAll(".node .emblem-svg")].map((b) => {
     const r = b.getBoundingClientRect();
     return [r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top];
   });

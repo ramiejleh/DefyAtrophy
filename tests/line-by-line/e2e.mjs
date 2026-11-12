@@ -201,11 +201,11 @@ async function e2eType() {
     await page.type("#reflect", "Wrapping the whole request means a bad status code is retried too, not just a network error from fetch. The old constant was dead code.");
     await page.click("#submit");
     await t.waitEvent("LBL reflection 02-use-it");
-    // a failing reflection keeps the finished weave locked until a rewrite passes
+    // a failing reflection keeps the final screen locked until a rewrite passes
     const grade = (verdict) => writeFileSync(join(t.sessionDir, "grades", "steps", "02-use-it.json"), JSON.stringify({ verdict, score: 70, feedback: "Close." }));
     grade("retry");
     await page.waitForSelector(".verdict.retry", { timeout: 8000 });
-    assert.equal(await page.$('[data-act="final"]'), null, "no finished weave after a failing grade");
+    assert.equal(await page.$('[data-act="final"]'), null, "no final screen after a failing grade");
     assert.ok(!t.events.includes("LBL complete"), "the session stays open");
     grade("partial");
     await t.waitEvent("LBL complete", 8000);
